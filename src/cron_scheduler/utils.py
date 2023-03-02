@@ -1,4 +1,6 @@
+from datetime import datetime
 from enum import Enum
+from typing import Optional
 
 
 class DayOf(Enum):
@@ -35,3 +37,7 @@ RecipeAll = None
 RecipeSet = tuple[int, int, int]
 RecipeList = list[int]
 Recipe = RecipeSolo|RecipeAll|RecipeSet|RecipeList
+
+
+def get_now(now: Optional[datetime] = None):
+    return datetime.now() if now is None else now

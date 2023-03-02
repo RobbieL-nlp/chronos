@@ -113,14 +113,15 @@ def get_num(recipe:Recipe, config:tuple[int, int]):
     config = config[::-1]
     if recipe is None:
         return _AllNum(*config)
-    try:
-        if isinstance(recipe, list):
-            return _NumList(recipe, *config)
-        if isinstance(recipe, tuple) and len(recipe) == 3:
-            return _NumSet(*recipe, *config)
-        raise Exception('wrong number of args')
-    except TypeError:
-        return _SoloNum(recipe, *config ) #type: ignore
+
+    if isinstance(recipe, list):
+        return _NumList(recipe, *config)
+    if isinstance(recipe, tuple) and len(recipe) == 3:
+        return _NumSet(*recipe, *config)
+    if isinstance(recipe, int):
+        return _SoloNum(recipe, *config )
+
+    raise Exception('wrong args')
 
 
 NodeContext = tuple[int, ...]
@@ -144,6 +145,7 @@ class AbstractDateNode(ABC):
         and other levels should only consider pass_now=False when calculating,
         and the tail node shuold re-implement all the functions to utilize this parameter 
     """
+    _config: tuple[int, ...] = ()
     
     @abstractmethod
     def amount_behind(self, n: list[int], context: NodeContext, pass_now=True) -> int:
@@ -178,7 +180,7 @@ class AbstractDateNode(ABC):
     def shortcut_prev(self, n: int, leap: int) -> tuple[int, int]:
         pass
 
-NodeT = TypeVar('NodeT', bound=AbstractDateNode)
+NodeT = TypeVar('NodeT', bound='DateNode|DayNode')
 
 class DateNode(AbstractDateNode, Generic[NodeT]):
 
@@ -187,6 +189,7 @@ class DateNode(AbstractDateNode, Generic[NodeT]):
     _config: tuple[int, ...] = ()
     
     def __init__(self, recipes:list[Recipe]) -> None:
+        recipes = recipes.copy()
         recipe = recipes.pop()
         self.nodes = self.get_nodes(recipes)
         self.num = self.get_num(recipe)
@@ -199,7 +202,7 @@ class DateNode(AbstractDateNode, Generic[NodeT]):
         return get_num(recipe, self._config) 
     
     @abstractmethod
-    def which_node(self, num: int, context: NodeContext) -> AbstractDateNode:
+    def which_node(self, num: int, context: NodeContext) -> NodeT:
         pass
     
     @abstractmethod
@@ -242,7 +245,7 @@ class DateNode(AbstractDateNode, Generic[NodeT]):
         node = self.which_node(num, context)
         amount = node.amount_ahead(n, to_ctx(context, num), pass_now)
         while leap == 0:
-            num, leap = self.num.next(current, 1, True)
+            num, leap = self.num.next(num, 1, True)
             if leap > 0: return amount
             node = self.which_node(num, context)
             amount += node.total_cap(context)
@@ -286,7 +289,9 @@ class DateNode(AbstractDateNode, Generic[NodeT]):
                 raise NoEnoughPrevious
             node = self.which_node(num, context)
             total_cap = node.total_cap(to_ctx(context, num))
-        return node.prev(n, to_ctx(context, num), leap_left, pass_now) + (num, )
+        ctx = to_ctx(context, num)
+        resets = self.resets(node, ctx, 1)
+        return node.prev(resets, ctx, leap_left, False) + (num, )
 
     def next(self, n: list[int], context: NodeContext, leap=1, pass_now=True) -> tuple[int, ...]:
         current = n.pop()
@@ -315,13 +320,28 @@ class DateNode(AbstractDateNode, Generic[NodeT]):
                 raise NoEnoughNext
             node = self.which_node(num, context)
             total_cap = node.total_cap(to_ctx(context, num))
-        return node.next(n, to_ctx(context, num), leap_left, pass_now) + (num, )
+        # reset to global start of the node, 
+        # and explicitly turn off pass_now, 
+        # since the leap left logically start to leap from the previous (num-1) circle
+        ctx = to_ctx(context, num)
+        resets = self.resets(node, ctx, 0)
+        return node.next(resets, ctx, leap_left, False) + (num, )
 
     def shortcut_next(self, n: int, leap: int) -> tuple[int, int]:
         raise NoShortcut
 
     def shortcut_prev(self, n: int, leap: int) -> tuple[int, int]:
         raise NoShortcut
+    
+    def resets(self, node:NodeT, ctx: NodeContext, pos=0):
+        start = node._config[pos]
+        if isinstance(node, DayNode):
+            return [start]
+        ctx = to_ctx(ctx, start)
+        nxt_node = node.which_node(start, ctx)
+        return node.resets(nxt_node, ctx, pos) + [start]
+
+
 
 
 class DayNode(AbstractDateNode):
@@ -330,7 +350,7 @@ class DayNode(AbstractDateNode):
     _config:tuple[int, int]
 
     def __init__(self, recipes:list[Recipe]) -> None:
-        self.num = self.get_num(recipes.pop())
+        self.num = self.get_num(recipes[-1])
 
     def get_num(self, recipe:Recipe):
         return get_num(recipe, self._config)
@@ -467,6 +487,7 @@ def is_leap_month(n:int):
     if n < 8:
         if n%2 == 1:
             return True
+        return False
     if n%2 == 0:
         return True
     return False
@@ -475,10 +496,10 @@ def is_leap_month(n:int):
 class Month(DateNode[DayNode]):
     _mode = DayOf.MONTH
     _config = (1, 12)
-    __slots__ = '__nodes_count'
+    __slots__ = '_nodes_count'
     __counts_map = (
-        (-1, 1, 2, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1), 
-        (-1, 1, 3, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1)
+        (4, 7, 1, 0), 
+        (4, 7, 0, 1)
         )
 
 
@@ -498,15 +519,9 @@ class Month(DateNode[DayNode]):
         return self.nodes[2]
 
     def nodes_count(self, context: NodeContext) -> tuple[int, ...]:
-        if self.__nodes_count is None:
-            counts = [0, 0, 0, 0]
-            map_ = self.__counts_map[0]\
-                 if is_leap_year(context[0]) else self.__counts_map[1]
-            for n in self.num.nums:
-                counts[map_[n]]+=1
-            self.__nodes_count = tuple(counts)
-        return self.__nodes_count
-    
+            return self.__counts_map[1] \
+                if is_leap_year(context[0]) else self.__counts_map[0]
+
     def total_cap(self, context: NodeContext):
         counts = getattr(self, '__total_cap', (-1, -1))
         if is_leap_year(context[0]):
@@ -579,7 +594,7 @@ class MonthW(DateNode[WeekNode]):
 
 
 
-def __year_leap_shortcut(obj: DateNode, n: int, leap: int, amount_func, leap_func, excp) -> tuple[int, int]:
+def _year_leap_shortcut(obj: DateNode, n: int, leap: int, amount_func, leap_func, excp) -> tuple[int, int]:
     amount = amount_func(n, False)
     if amount < 4:
         return n, leap
@@ -624,11 +639,11 @@ class Year(DateNode[Month]):
     #     return leap_func(n, stride*4, True)[0], leap_left
         
     def shortcut_next(self, n: int, leap: int) -> tuple[int, int]:
-        return __year_leap_shortcut(
+        return _year_leap_shortcut(
             self, n, leap, self.num.amount_ahead, self.num.next, NoEnoughNext)
 
     def shortcut_prev(self, n: int, leap: int) -> tuple[int, int]:
-        return __year_leap_shortcut(
+        return _year_leap_shortcut(
             self, n, leap, self.num.amount_behind, self.num.prev, NoEnoughPrevious)
 
 
@@ -685,11 +700,11 @@ class YearD(DateNode[DayNode]):
         raise NotImplementedError
 
     def shortcut_next(self, n: int, leap: int) -> tuple[int, int]:
-        return __year_leap_shortcut(
+        return _year_leap_shortcut(
             self, n, leap, self.num.amount_ahead, self.num.next, NoEnoughNext)
 
     def shortcut_prev(self, n: int, leap: int) -> tuple[int, int]:
-        return __year_leap_shortcut(
+        return _year_leap_shortcut(
             self, n, leap, self.num.amount_behind, self.num.prev, NoEnoughPrevious)
 
 
@@ -705,13 +720,24 @@ class DateMark:
     __slots__ = 'nodes', 'mode'
 
     def __init__(self, recipes: list[Recipe], mode: DayOf,) -> None:
+        """
+        @param recipes: list of Date recipes, in a reverse order, i.e. year at last 
+        """
         self.nodes: DateNode = _mode_map[mode](recipes)
         self.mode = mode
 
     def prev(self, n: list[int], leap=1, pass_now=True):
+        """
+        @param n: list of Date numbers, in a reverse order, i.e. year at last 
+        @return: list of Date numbers, in a reverse order, i.e. year at last
+        """
         return self.nodes.prev(n, (), leap, pass_now)   
 
     def next(self, n: list[int], leap=1, pass_now=True):
+        """
+        @param n: list of Date numbers, in a reverse order, i.e. year at last
+        @return: list of Date numbers, in a reverse order, i.e. year at last
+        """
         return self.nodes.next(n, (), leap, pass_now)
 
 

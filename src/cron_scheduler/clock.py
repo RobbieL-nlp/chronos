@@ -23,15 +23,16 @@ class AbstractClock:
 
 def _get_num(recipe:Recipe, config:tuple[int, ...]):
     if recipe is None:
-        return AllNum(*config) # type: ignore
-    try:
-        if isinstance(recipe, list):
-            return NumList(recipe, *config) # type: ignore
-        if isinstance(recipe, tuple) and len(recipe) == 3:
-            return NumSet(*recipe, *config) # type: ignore
-        raise Exception('wrong number of args')
-    except TypeError:
-        return SoloNum(recipe ) # type: ignore
+        return AllNum(*config)
+
+    if isinstance(recipe, list):
+        return NumList(recipe, *config)
+    if isinstance(recipe, tuple) and len(recipe) == 3:
+        return NumSet(*recipe, *config)
+    if isinstance(recipe, int):
+        return SoloNum(recipe, *config )
+
+    raise Exception('wrong args')
 
 
 class ClockNum(AbstractClock):

@@ -4,7 +4,7 @@ from cron_scheduler.clock import ClockT, get_clocks
 from cron_scheduler.date import DateMark, MWeekT, MonthT, YWeekT, YearT
 
 
-from cron_scheduler.utils import DayOf, NoMatch, Recipe, RecipeAll, RecipeList, RecipeSet, RecipeSolo
+from cron_scheduler.utils import DayOf, NoMatch, Recipe, RecipeList, RecipeSet, RecipeSolo
 
 
 class DateTimeParser:
@@ -254,7 +254,7 @@ class CrontabParser:
     @classmethod
     def compose(cls, cron:str, mode: DayOf):
         start = cls.parse(cron, mode)
-        dt = DateMark(list(start[:-3]), mode)
+        dt = DateMark(list(start[-4::-1]), mode)
         clock = get_clocks(start[-3:])
         return dt, clock
   

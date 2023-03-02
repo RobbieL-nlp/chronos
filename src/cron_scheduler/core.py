@@ -8,7 +8,7 @@ _dayof_map = tuple(DayOf)
 
 
 class CronTime(TimePoint):
-    def __init__(self, cron:str, mode: Optional[DayOf]) -> None:
+    def __init__(self, cron:str, mode: Optional[DayOf] = None) -> None:
         cron_ = cron.split(';')
         if mode is None:
             assert len(cron_) == 2, \
@@ -20,7 +20,7 @@ class CronTime(TimePoint):
 
 
 class CronPeriod(Period):
-    def __init__(self, cron: str, mode: Optional[DayOf]) -> None:
+    def __init__(self, cron: str, mode: Optional[DayOf] = None) -> None:
         cron_ = cron.split(';')
         if mode is None:
             assert len(cron_) == 2, \
