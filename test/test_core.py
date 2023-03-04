@@ -4,10 +4,11 @@ sys.path.append("src")
 
 
 from datetime import datetime, timedelta
+import datetime as dt
 import random
 from typing import Optional
 from cron_scheduler.parse import PointsDecoder
-from cron_scheduler.utils import DayOf
+from cron_scheduler.utils import DayOf, NoEnoughNext, NoEnoughPrevious
 
 import unittest
 from cron_scheduler.core import CronTime, CronPeriod, parse_cron
@@ -92,6 +93,59 @@ class TestYearDaySolo(unittest.TestCase, SoloRandTimeTest ):
     _scopes = ("years", "days", "hours", "minutes", "seconds")
     _base = (1, 1, 0, 0, 0)
     _max = (9999, 365, 23, 59, 59)
+
+
+class CronTimeStarterTest(unittest.TestCase):
+    _fd = datetime(1, 1, 1)
+    _ld = datetime(9999, 1, 1)
+    _loops = 10
+
+    def _random_dt(self):
+        max_delta = int((self._ld - self._fd).total_seconds())
+        shift = random.randint(0, max_delta)
+        return self._fd + timedelta(seconds=shift)
+
+    def _next(self, pattern, loops):
+        cron = CronTime(pattern)
+        for _ in range(loops):
+            now = self._random_dt()
+            max_delta = int((self._ld - now).total_seconds())
+            delta = random.randint(1, max_delta*2)
+            if delta > max_delta:
+                with self.assertRaises(NoEnoughNext):
+                    predict = cron.next(now, delta)
+            else:
+                predict = cron.next(now, delta)
+                time_delta = timedelta(seconds=delta)
+                label = now + time_delta
+                self.assertEqual(predict, label)
+
+    def _previous(self, pattern, loops):
+        cron = CronTime(pattern)
+        for _ in range(loops):
+            now = self._random_dt()
+            max_delta = int((now - self._fd).total_seconds())
+            delta = random.randint(1, max_delta*2)
+            if delta > max_delta:
+                with self.assertRaises(NoEnoughPrevious):
+                    predict = cron.prev(now, delta)
+            else:
+                predict = cron.prev(now, delta)
+                time_delta = timedelta(seconds=delta)
+                label = now - time_delta
+                self.assertEqual(predict, label)
+
+
+    def test(self):
+        patterns = (
+            '* * * * * *; 0',
+            '* * * * *; 1',
+            '* * * * * * *; 2',
+            '* * * * * *; 3'
+        )
+        for pattern in patterns:
+            self._next(pattern, self._loops)
+            self._previous(pattern, self._loops)
 
 
 
