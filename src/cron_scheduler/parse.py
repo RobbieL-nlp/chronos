@@ -4,7 +4,7 @@ from cron_scheduler.clock import ClockT, get_clocks
 from cron_scheduler.date import DateMark, MWeekT, MonthT, YWeekT, YearT
 
 
-from cron_scheduler.utils import DayOf, NoMatch, Recipe, RecipeList, RecipeSet, RecipeSolo
+from cron_scheduler.utils import DayOf, NoMatch, Recipe, RecipeList, RecipeSet, RecipeSolo, num_wom
 
 
 class DateTimeParser:
@@ -29,18 +29,31 @@ class DateTimeParser:
             thus, be careful when describe 5th weekday of a month 
 
         """
-        year, _, weekday = now.isocalendar()
+        year, _, wd = now.isocalendar()
         month = now.month
-        day = now.day
-        no = (day-1)//7
-        if no != 0:
-            return (year, month, no+1, weekday, now.hour, now.minute, now.second)
-        month_start = datetime(year, month, 1)
-        if month_start.weekday() < 5:
-            return (year, month, no+1, weekday, now.hour, now.minute, now.second)
+        dom = now.day
+        fdom = datetime(year, month, 1)
+        fdom_wd = fdom.weekday()  
+        shift = 7-fdom_wd if fdom_wd > 3 else -fdom_wd
+        gap = dom - shift
+        fd = fdom + timedelta(days=shift)
+        if now >= fd:
+            wom =((gap-1)//7) + 1
+            if wom > num_wom(year, month):
+                wom = 1
+                if month == 12:
+                    month = 1
+                    year += 1
+                    assert year < 10000, 'the time is out of range under day of week of month'
+                else:
+                    month += 1
+            return (year, month, wom, wd, now.hour, now.minute, now.second)
+        
         if month == 1:
-            return (year-1, 12, no+1, weekday, now.hour, now.minute, now.second)
-        return (year, month-1, no+1, weekday, now.hour, now.minute, now.second)
+            year -= 1
+            assert year > 0, 'the time is out of range under day of week of month'
+            return (year, 12, num_wom(year, 12), wd, now.hour, now.minute, now.second)
+        return (year, month-1, num_wom(year, month-1), wd, now.hour, now.minute, now.second)
 
     @staticmethod
     def __parse_yweek(now: datetime):
@@ -89,7 +102,7 @@ class PointsDecoder:
         fd = datetime(date[0], date[1], 1, *time)
         wd = fd.weekday()
         shift = 7-wd if wd > 3 else -wd
-        delta = timedelta(date[2]-1 + shift, weeks=date[1]-1)
+        delta = timedelta(date[3]-1 + shift, weeks=date[2]-1)
         return fd + delta
 
     __func_map__ = {

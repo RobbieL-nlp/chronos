@@ -21,14 +21,14 @@ class AbstractDateNum(AbstractNum):
 class _SoloNum(SoloNum, AbstractDateNum):
 
     def amount_ahead(self, n: int, pass_now=True) -> int:
-        if pass_now:
-            return 0
-        return 1 if self.num==n else 0
+        if self.num >= n:
+            return 0 if pass_now else 1
+        return 1
 
     def amount_behind(self, n: int, pass_now=True) -> int:
-        if pass_now:
-            return 0
-        return 1 if self.num==n else 0
+        if self.num <= n:
+            return 0 if pass_now else 1
+        return 1
 
 
 class _AllNum(AllNum, AbstractDateNum):
@@ -272,14 +272,14 @@ class DateNode(AbstractDateNode, Generic[NodeT]):
         num, l = self.num.prev(num, 1, True)
         if l > 0:
             raise NoEnoughPrevious
-        try:
-            # here leap_left passing in shortcut means starting from the num,
-            # at the num, and at the last point of num contains, 
-            # and the num itself should count as one leap,
-            # e.g., if leap_left=1, then the point is actually the last point this num contains
-            num, leap_left = self.shortcut_prev(num, leap_left) 
-        except NoShortcut:
-            pass
+        # try:
+        #     # here leap_left passing in shortcut means starting from the num,
+        #     # at the num, and at the last point of num contains, 
+        #     # and the num itself should count as one leap,
+        #     # e.g., if leap_left=1, then the point is actually the last point this num contains
+        #     num, leap_left = self.shortcut_prev(num, leap_left) 
+        # except NoShortcut:
+        #     pass
         node = self.which_node(num, context)
         total_cap = node.total_cap(to_ctx(context, num))
         while total_cap < leap_left:
@@ -307,10 +307,11 @@ class DateNode(AbstractDateNode, Generic[NodeT]):
         num, l = self.num.next(num, 1, True)
         if l > 0:
             raise NoEnoughNext
-        try:
-            num, leap_left = self.shortcut_next(num, leap_left)
-        except NoShortcut:
-            pass
+        ### disabled shortcut for test simplicity for now
+        # try:
+        #     num, leap_left = self.shortcut_next(num, leap_left)
+        # except NoShortcut:
+        #     pass
         node = self.which_node(num, context)
         total_cap = node.total_cap(to_ctx(context, num))
         while total_cap < leap_left:
@@ -430,7 +431,7 @@ class WeekNode(DateNode[DayNode]):
         return (self.num.cap,)
     
     def total_cap(self, context: NodeContext):
-        if self.__total_cap is None:
+        if getattr(self, '__total_cap', None) is None:
             self.__total_cap = self.nodes_count[0]*self.nodes[0].total_cap(context) #type: ignore
         return self.__total_cap
 
@@ -537,13 +538,12 @@ class Month(DateNode[DayNode]):
 
 def weeks_in_year(year: int):
     d1 = date(year, 1, 1).weekday()
-    if d1 == 4:
+    if d1 == 3:
         return 53
-    if d1 != 3:
+    if d1 != 2:
         return 52
     if is_leap_year(year):
-        if d1 == 3:
-            return 53
+        return 53
     return 52
 
 
@@ -573,22 +573,28 @@ class MonthW(DateNode[WeekNode]):
         return self.nodes[0]
     
     def nodes_count(self, context: NodeContext) -> tuple[int, int]:
-        if self.__nodes_count is None:
+        if getattr(self, '__nodes_count', None) is None:
             year = context[0]
             counts = [0, 0]
             for n in self.num.nums:
                 d1, dt = monthrange(year, n)
                 if d1 == 3:
                     if dt >= 29:
+                        counts[1] += 1
+                    else:
                         counts[0] += 1
                 elif d1 == 2:
                     if dt >= 30:
+                        counts[1] += 1
+                    else:
                         counts[0] += 1
                 elif d1 == 1:
                     if dt == 31:
+                        counts[1] += 1
+                    else:
                         counts[0] += 1
                 else:
-                    counts[1] += 1
+                    counts[0] += 1
             self.__nodes_count = tuple(counts)
         return self.__nodes_count           
 
@@ -688,7 +694,7 @@ class YearD(DateNode[DayNode]):
     _config = (1, 9999)        
 
     def get_nodes(self, recipes: list[Recipe]) -> tuple[DayNode, ...]:
-        return (DOY(recipes), LongDOM(recipes))
+        return (DOY(recipes), LeapDOY(recipes))
     
     def which_node(self, num: int, context: NodeContext = ()) -> DayNode:
         return self.nodes[1] if is_leap_year(num) else self.nodes[0]
