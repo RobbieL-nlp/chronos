@@ -6,6 +6,8 @@ from typing import Generic, Optional, TypeVar
 
 from cron_scheduler.num import AbstractNum, AllNum, NumList, NumSet, SoloNum, TimeNumCal
 from cron_scheduler.utils import DayOf, NoEnoughNext, NoEnoughPrevious, NoShortcut, NumType, Recipe
+from cron_scheduler.utils import weeks_in_year, is_leap_month, is_leap_year
+
 
 class AbstractDateNum(AbstractNum):
     
@@ -474,26 +476,6 @@ class LongWOY(WeekNode):
     _config = (1, 53)
 
 
-def is_leap_year(n:int):
-    if n%4 != 0:
-        return False
-    if n%100 != 0:
-        return True
-    if n%400 != 0:
-        return False
-    return True
-        
-
-def is_leap_month(n:int):
-    if n < 8:
-        if n%2 == 1:
-            return True
-        return False
-    if n%2 == 0:
-        return True
-    return False
-
-
 class Month(DateNode[DayNode]):
     _mode = DayOf.MONTH
     _config = (1, 12)
@@ -534,17 +516,6 @@ class Month(DateNode[DayNode]):
             cap = super().total_cap(context)
             self.__total_cap = (cap, counts[1])
         return self.__total_cap[0]
-
-
-def weeks_in_year(year: int):
-    d1 = date(year, 1, 1).weekday()
-    if d1 == 3:
-        return 53
-    if d1 != 2:
-        return 52
-    if is_leap_year(year):
-        return 53
-    return 52
 
 
 class MonthW(DateNode[WeekNode]):

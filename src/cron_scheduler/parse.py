@@ -4,7 +4,7 @@ from cron_scheduler.clock import ClockT, get_clocks
 from cron_scheduler.date import DateMark, MWeekT, MonthT, YWeekT, YearT
 
 
-from cron_scheduler.utils import DayOf, NoMatch, Recipe, RecipeList, RecipeSet, RecipeSolo, num_wom
+from cron_scheduler.utils import DayOf, NoMatch, Recipe, RecipeList, RecipeSet, RecipeSolo, num_wom, weeks_in_year
 
 
 class DateTimeParser:
@@ -29,8 +29,15 @@ class DateTimeParser:
             thus, be careful when describe 5th weekday of a month 
 
         """
-        year, _, wd = now.isocalendar()
-        month = now.month
+        year, woy, wd = now.isocalendar()
+        # hard code first/last month according to week of year 
+        if woy == 1:
+            return (year, 1, 1, wd, now.hour, now.minute, now.second)
+        elif woy == weeks_in_year(year):
+            
+            return (year, 12, num_wom(year, 12), wd, now.hour, now.minute, now.second)
+        else: 
+            month = now.month
         dom = now.day
         fdom = datetime(year, month, 1)
         fdom_wd = fdom.weekday()  
