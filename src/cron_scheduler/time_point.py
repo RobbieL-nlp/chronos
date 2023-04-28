@@ -46,6 +46,10 @@ class TimePoint(AbstractTimePoint):
         return PointsDecoder.decode(dates[::-1], tuple(pts[-3:]), self.mode)
 
     def next(self, now: Optional[datetime] = None, leap: int = 1, pass_now = True):
+        ### when reimplement, the pass_now parameter should only exist on this level,
+        # and the num and date should only consider pass_now = true for simplicity and consistency.
+        # since pass_now should only affects on the first iteration, namely the second level, a simple check
+        # on the first iter in this func will be enough  
         now = get_now(now)
         pts = list(DateTimeParser.parse(now, self.mode))
         num, carry = self.points[-1].next(pts[-1], leap, pass_now)

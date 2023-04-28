@@ -88,7 +88,7 @@ class AllNum(AbstractNum):
     
 class NumSet(AbstractNum):
     
-    __slots__ = ('start', 'end', 'mod', 'max_', 'base', 'cap')
+    # __slots__ = ('start', 'end', 'mod', 'max_', 'base')
 
     def __init__(self, start: int, end: int, mod: int, max_: int, base: int=0) -> None:
         self.base = base
@@ -99,17 +99,20 @@ class NumSet(AbstractNum):
             self.start = self.max_+1+start if start < 0 else start
         self.end = self.max_+1+end if end < 0 else end
         self.mod = mod
-        self.cap = self.width//mod + 1
         self.__integrity_check()
     
     def __integrity_check(self):
         assert self.max_>self.base, 'max can only greater than base'
         assert self.mod>0, 'mod can only be positive interger'
-        assert self.width <= self.max_ + 1, 'gap exceed the max'
-        assert self.width > 0, 'gap smaller than 0'
+        # assert self.width <= self.max_ + 1, 'gap exceed the max'
+        # assert self.width > 0, 'gap smaller than 0'
 
     @cached_property
-    def __cross_0(self):
+    def cap(self):
+        return self.width//self.mod + 1
+
+    @cached_property
+    def _cross_0(self):
         return self.start > self.end
     
     @cached_property
@@ -120,16 +123,17 @@ class NumSet(AbstractNum):
         e.g. start=1, end=5, => width=4, 
         from 1 to 2 need 1 leap
         """
+        assert 0 < self.end - self.cal_start <= self.max_ + 1, 'gap exceed the max'
         return self.end - self.cal_start
 
     @cached_property
     def cal_start(self):
-        if self.__cross_0:
+        if self._cross_0:
             return self.start - self.max_ - 1 + self.base
         return self.start
     
     def cross(self, n: int):
-        if self.__cross_0:
+        if self._cross_0:
             return not (self.end <= n <= self.start)
         return self.start <= n <= self.end
 
@@ -193,9 +197,11 @@ class NumSet(AbstractNum):
             past -= margin
             if not pass_now or margin != 0:
                 leap -= 1
-        dist = leap*self.mod - past
+        
+        pos = past//self.mod
+        dist = leap - pos
         if dist > 0:
-            borrow += 1+ dist//(self.width+1)
+            borrow += 1 + dist//(self.cap+1)
         nth = past//self.mod - leap
         num = self.nth_int(nth) if nth>=0 else self.nth_last_int(-nth)
         return num, borrow
@@ -221,16 +227,19 @@ class NumSet(AbstractNum):
                 forward += 1
             leap -= 1
         else:
+            # reset the start point to the near point
             past = self.distance_start(n)
             margin = past%self.mod
             past -= margin
-            if pass_now and margin == 0:
-                leap += 1
+            # if pass now is true and now equal to one of the options,
+            # no leap consumption, otherwise consume one leap
+            if not pass_now or margin != 0:
+                leap -= 1
 
         pos = past//self.mod
         dist = leap - (self.cap-1-pos)
         if dist > 0:
-            forward += 1 + dist//(self.width+1)
+            forward += 1 + dist//(self.cap+1)
         nth = pos + leap
         return self.nth_int(nth), forward       
     

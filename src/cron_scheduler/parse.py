@@ -145,10 +145,10 @@ class CrontabParser:
         the first number in the scope range
     """
     _recipe_pattern = (
-        re.compile(r'-?\d+'), 
-        re.compile(r'\*'), 
-        re.compile(r'(-?\d+,)+-?\d+,?'), 
-        re.compile(r'(\*|-?\d+~-?\d+)(/\d+)?')
+        re.compile(r'(?<=^)-?\d+(?=$)'), 
+        re.compile(r'(?<=^)\*(?=$)'), 
+        re.compile(r'(?<=^)(-?\d+,)+-?\d+,?(?=$)'), 
+        re.compile(r'(?<=^)(\*|-?\d+~-?\d+)(/\d+)(?=$)?')
         )
 
     @staticmethod
@@ -311,7 +311,7 @@ class CronPeriodParser:
         range will not be checked here.
     """
     _recipe_pattern = CrontabParser._recipe_pattern \
-        + (re.compile(r'(-?\d+)\.\.(-?\d+)'), re.compile(r'(-?\d+)&(-?\d+)'))
+        + (re.compile(r'(?<=^)(-?\d+)\.\.(-?\d+)(?=$)'), re.compile(r'(?<=^)(-?\d+)&(-?\d+)(?=$)'))
 
     @staticmethod
     def _match_solo(s:str, period=False) -> tuple[RecipeSolo, RecipeSolo]:

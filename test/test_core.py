@@ -186,14 +186,71 @@ class CronTimeStarterTest(unittest.TestCase):
                     self.assertEqual(predict, label)
 
 
-# class CronListRandomTest:
-#     def test(self):
-#         pass
+class ComplexTest(unittest.TestCase):
+
+    def test_set(self):
+        for (pat, leap, now, expect) in self.set_cases:
+            if leap > 0:
+                predict = CronTime(pat).next(now, leap, )
+            else:
+                predict = CronTime(pat).prev(now, abs(leap), )
+            self.assertEqual(expect, predict)
+
+    @property
+    def set_cases(self):
+        return [
+            (
+                "* * * */3 0 0; 0", 3, 
+                datetime(2023, 3, 1, 1, 0, 0),
+                datetime(2023, 3, 1, 9, 0, 0)
+            ),
+            (
+                "* * * */3 0 0; 0", 10, 
+                datetime(2023, 3, 1, 0, 0, 0),
+                datetime(2023, 3, 2, 6, 0, 0)
+            ),
+            (
+                "* * * */3 0 0; 0", 18, 
+                datetime(2023, 3, 1, 0, 0, 0),
+                datetime(2023, 3, 3, 6, 0, 0)
+            ),
+            (
+                "* * * */3 0 0; 0", -3, 
+                datetime(2023, 3, 1, 9, 0, 0),
+                datetime(2023, 3, 1, 0, 0, 0)
+            ),
+            (
+                "* * * */3 0 0; 0", -10, 
+                datetime(2023, 3, 2, 6, 0, 0),
+                datetime(2023, 3, 1, 0, 0, 0)
+            ),
+            (
+                "* * * */3 0 0; 0", -10, 
+                datetime(2023, 3, 2, 0, 0, 0),
+                datetime(2023, 2, 28, 18, 0, 0)
+            ),
+            (
+                "* * * */3 0 0; 0", -8, 
+                datetime(2023, 3, 1, 23, 0, 0),
+                datetime(2023, 2, 28, 21, 0, 0)
+            ),
+            (
+                "* * * */3 0 0; 0", -8, 
+                datetime(2023, 3, 2, 1, 0, 0),
+                datetime(2023, 3, 1, 0, 0, 0)
+            ),
+            (
+                "* * * */3 0 0; 0", -6, 
+                datetime(2023, 3, 2, 1, 0, 0),
+                datetime(2023, 3, 1, 6, 0, 0)
+            ),           
+        ]
 
 
 if __name__ == "__main__":
 
-    unittest.main()
+    # unittest.main()
+    ComplexTest().test_set()
 
     # now = PointsDecoder.decode((9434, 5, 3, 4), ( 2, 45, 33), DayOf.MWEEK)
     # predict = CronTime('* * * 4 2 45 33; 2').next(now, 4000)
