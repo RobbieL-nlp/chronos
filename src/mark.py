@@ -1,4 +1,4 @@
-from typing import Protocol, Self, Tuple, List
+from typing import Protocol, Self, Set, Tuple, List, TypeVar
 from functools import cached_property
 
 # [mark value, # of leap for upper level, borrow/carry considered when across base point]
@@ -40,6 +40,13 @@ class MarkT(Protocol):
         # of backward leaps before across the base (inclusive)
         """
         ...
+
+    def contains(self, n: int) -> bool:
+        """if the numebr is exactly one of the options"""
+        ...
+
+    def __contains__(self, n: int) -> bool:
+        return self.contains(n)
 
 
 def _fmt_mark_num(idx: int, cap: int):
@@ -97,6 +104,9 @@ class Solo(MarkT):
 
     def cost_behind(self, n: int) -> int:
         return 1 if n > self.mark else 0
+
+    def contains(self, n: int) -> bool:
+        return n == self.mark
 
 
 class Every(MarkT):
@@ -161,6 +171,9 @@ class Every(MarkT):
 
     def cost_behind(self, n: int) -> int:
         return n
+
+    def contains(self, n: int) -> bool:
+        return 0 <= n <= self.cap
 
 
 class Seq(MarkT):
@@ -284,8 +297,6 @@ class Seq(MarkT):
             return False
         return self.has_past(n) % self.itv == 0
 
-    __contains__ = contains
-
     def prev(self, n: int, leap: int) -> MarkC:
         borrow = 0
         if not self.cross(n):
@@ -356,7 +367,7 @@ class Seq(MarkT):
 
 
 class EnumM(MarkT):
-    __slots__ = ("_cap", "_marks")
+    __slots__ = ("_cap", "_marks", "_mark_set")
 
     def __init__(self, marks: List[int], cap: int) -> None:
         """
@@ -373,9 +384,10 @@ class EnumM(MarkT):
         """
         assert cap > 0, "cap must be positve"
         self._cap = cap
-        self._marks = self.__load_marks(marks)
+        self._mark_set = self.__load_marks(marks)
+        self._marks = tuple(sorted(self._mark_set))
 
-    def __load_marks(self, marks: List[int]) -> Tuple[int, ...]:
+    def __load_marks(self, marks: List[int]) -> Set[int]:
         assert len(marks) > 0, "marks list cannot be empty "
         mark_set = set()
 
@@ -384,7 +396,7 @@ class EnumM(MarkT):
             assert self.cap >= mark >= 0, "mark out of range"
             mark_set.add(mark)
 
-        return tuple(sorted(mark_set))
+        return mark_set
 
     @property
     def cap(self) -> int:
@@ -461,6 +473,9 @@ class EnumM(MarkT):
         pos = self.bin_of(n)
         return pos + int(self.marks[n] != n)
 
+    def contains(self, n: int) -> bool:
+        return n in self._mark_set
+
 
 def shift_0(num: int, base: int):
     """convert the num from base to 0 base"""
@@ -470,3 +485,22 @@ def shift_0(num: int, base: int):
 def reload_base(num: int, base: int):
     """convert the num from 0 base to base"""
     return num + base
+
+
+SpecT = TypeVar("SpecT", int, None, Tuple[int, int, int], List[int])
+
+
+def load_mark(spec: SpecT, *args, **kwargs):
+    if spec is None:
+        return Every(*args, **kwargs)
+
+    if isinstance(spec, int):
+        return Solo(spec, *args, **kwargs)
+
+    if isinstance(spec, list):
+        return EnumM(spec, *args, **kwargs)
+
+    if isinstance(spec, tuple) and len(spec) == 3:
+        return Seq(*spec, **kwargs)
+
+    raise Exception(f"No class found for spec type {type(spec)}")
