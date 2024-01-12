@@ -274,7 +274,7 @@ class Seq(MarkT):
 
     @cached_property
     def marks(self) -> Tuple[int, ...]:
-        return tuple(self.nth(x) for x in range(self.count))
+        return tuple(sorted(self.nth(x) for x in range(self.count)))
 
     def has_past(self, n: int) -> int:
         """distance to start, n must be in range to make the result meaningful"""
@@ -346,7 +346,7 @@ class Seq(MarkT):
         if n >= self.start:
             return self.left_count - self.has_past(n) // self.itv - 1
 
-        return self.leaps_left(n)
+        return self.leaps_left(n) + self.left_count
 
     def cost_behind(self, n: int) -> int:
         if not self.cross_base:
@@ -361,7 +361,7 @@ class Seq(MarkT):
             return self.count - self.left_count
 
         if n >= self.start:
-            return self.count - self.leaps_left(n)
+            return self.count - self.leaps_left(n) + self.count - self.left_count
 
         return self.count - self.leaps_left(n) - self.left_count
 
@@ -477,14 +477,14 @@ class EnumM(MarkT):
         return n in self._mark_set
 
 
-def shift_0(num: int, base: int):
-    """convert the num from base to 0 base"""
-    return num - base
+def shift_0(num: int):
+    """convert the num from 1 to 0 base, 0 always means first number"""
+    return num - 1 if num > 0 else 0
 
 
-def reload_base(num: int, base: int):
-    """convert the num from 0 base to base"""
-    return num + base
+def reload_base(num: int):
+    """convert the num from 0 base to  1"""
+    return num + 1
 
 
 SpecT = TypeVar("SpecT", int, None, Tuple[int, int, int], List[int])
