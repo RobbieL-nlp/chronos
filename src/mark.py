@@ -1,8 +1,8 @@
-from typing import Protocol, Self, Set, Tuple, List, TypeVar
+from typing import Protocol, TypeVar, Union
 from functools import cached_property
 
 # [mark value, # of leap for upper level, borrow/carry considered when across base point]
-MarkC = Tuple[int, int]
+MarkC = tuple[int, int]
 
 
 class MarkT(Protocol):
@@ -15,7 +15,7 @@ class MarkT(Protocol):
     """
 
     # list of mark numbers
-    marks: Tuple[int, ...]
+    marks: tuple[int, ...]
     # count of mark numbers, length of marks
     count: int
     # the max mark number
@@ -90,7 +90,7 @@ class Solo(MarkT):
         return self._mark
 
     @cached_property
-    def marks(self) -> Tuple[int]:
+    def marks(self) -> tuple[int]:
         return (self.mark,)
 
     def prev(self, n: int, leap: int = 1) -> MarkC:
@@ -134,7 +134,7 @@ class Every(MarkT):
         return self._count
 
     @cached_property
-    def marks(self) -> Tuple[int, ...]:
+    def marks(self) -> tuple[int, ...]:
         return tuple(range(self.cap))
 
     def prev(self, n: int, leap: int) -> MarkC:
@@ -273,7 +273,7 @@ class Seq(MarkT):
         return self.last_nth(1)
 
     @cached_property
-    def marks(self) -> Tuple[int, ...]:
+    def marks(self) -> tuple[int, ...]:
         return tuple(sorted(self.nth(x) for x in range(self.count)))
 
     def has_past(self, n: int) -> int:
@@ -369,7 +369,7 @@ class Seq(MarkT):
 class EnumM(MarkT):
     __slots__ = ("_cap", "_marks", "_mark_set")
 
-    def __init__(self, marks: List[int], cap: int) -> None:
+    def __init__(self, marks: list[int], cap: int) -> None:
         """
         params\n
         marks: list of numbers representing marks available in the cycle
@@ -387,7 +387,7 @@ class EnumM(MarkT):
         self._mark_set = self.__load_marks(marks)
         self._marks = tuple(sorted(self._mark_set))
 
-    def __load_marks(self, marks: List[int]) -> Set[int]:
+    def __load_marks(self, marks: list[int]) -> set[int]:
         assert len(marks) > 0, "marks list cannot be empty "
         mark_set = set()
 
@@ -407,7 +407,7 @@ class EnumM(MarkT):
         return len(self._marks)
 
     @property
-    def marks(self) -> Tuple[int, ...]:
+    def marks(self) -> tuple[int, ...]:
         return self._marks
 
     def cross(self, n: int) -> bool:
@@ -477,17 +477,7 @@ class EnumM(MarkT):
         return n in self._mark_set
 
 
-def shift_0(num: int):
-    """convert the num from 1 to 0 base, 0 always means first number"""
-    return num - 1 if num > 0 else 0
-
-
-def reload_base(num: int):
-    """convert the num from 0 base to  1"""
-    return num + 1
-
-
-SpecT = TypeVar("SpecT", int, None, Tuple[int, int, int], List[int])
+SpecT = Union[int, None, tuple[int, int, int], list[int]]
 
 
 def load_mark(spec: SpecT, *args, **kwargs):

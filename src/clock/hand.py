@@ -1,5 +1,4 @@
 from mark import MarkC, MarkT, SpecT, load_mark
-from typing import Generic, TypeVar, Tuple
 from utils import Meta
 
 
@@ -11,7 +10,7 @@ class Hand(MarkT, metaclass=Meta, cap=59):
         self._mark: MarkT = load_mark(spec, cap)
 
     @property
-    def marks(self) -> Tuple[int, ...]:
+    def marks(self) -> tuple[int, ...]:
         return self._mark.marks
 
     @property

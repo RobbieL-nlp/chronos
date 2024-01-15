@@ -8,10 +8,10 @@ class CronDecoder:
     mode_len = {CMode.D: 5, CMode.M: 6, CMode.W: 6, CMode.MW: 7}
 
     @classmethod
-    def decode_scope(cls, s: str, *args, **kwargs):
+    def decode_scope(cls, s: str, base: int = 0, *args, **kwargs):
         for dec in cls.scope_decoders:
             try:
-                return dec.decode(s)
+                return dec.decode(s, base=base)
             except NoMatch:
                 continue
         raise NoMatch
@@ -22,8 +22,11 @@ class CronDecoder:
         mode_len = cls.mode_len[mode]
         if len(scopes) < mode_len - 1 or len(scopes) > mode_len:
             raise ModeMismatch
-        specs = [cls.decode_scope(s) for s in scopes]
+        specs = [
+            cls.decode_scope(scopes[s], int(s < mode_len - 3))
+            for s in range(len(scopes))
+        ]
         if len(scopes) == mode_len - 1:
             specs.append(0)
 
-        return specs[:-3:-1], tuple(specs[-3:])
+        return specs[:-3:-1], specs[-3:]

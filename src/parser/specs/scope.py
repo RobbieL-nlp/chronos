@@ -1,8 +1,10 @@
-from enum import Enum, IntEnum
+from enum import IntEnum
 from re import Match, Pattern
 import re
-from typing import List, Optional, Protocol, Set, Tuple
+from typing import Optional, Protocol
 from exceptions import NoMatch
+from mark import SpecT
+from utils import shift_0
 
 
 class ScopeType(IntEnum):
@@ -16,19 +18,19 @@ class ScopeType(IntEnum):
 
 class ScopeDecoder(Protocol):
     pattern: Pattern
-    prerequisite: Tuple[ScopeType, ...] = ()
-    no_occur: Tuple[ScopeType, ...] = ()
+    prerequisite: tuple[ScopeType, ...] = ()
+    no_occur: tuple[ScopeType, ...] = ()
     follow: Optional[ScopeType] = None
     apart: Optional[ScopeType] = None
 
     T: ScopeType
 
     @classmethod
-    def _check_pre(cls, *, prev_types: Set[ScopeType], **kargs) -> bool:
+    def _check_pre(cls, *, prev_types: set[ScopeType], **kargs) -> bool:
         return all(p in prev_types for p in cls.prerequisite)
 
     @classmethod
-    def _check_occur(cls, *, prev_types: Set[ScopeType], **kargs) -> bool:
+    def _check_occur(cls, *, prev_types: set[ScopeType], **kargs) -> bool:
         return all(p not in prev_types for p in cls.prerequisite)
 
     @classmethod
@@ -51,7 +53,7 @@ class ScopeDecoder(Protocol):
     ]
 
     @classmethod
-    def pre_check(cls, prev_types: Set[ScopeType], follow: ScopeType):
+    def pre_check(cls, prev_types: set[ScopeType], follow: ScopeType):
         return all(
             fn(cls, prev_types=prev_types, follow=follow) for fn in cls.__checks__
         )
@@ -60,7 +62,7 @@ class ScopeDecoder(Protocol):
     def match(
         cls,
         s: str,
-        prev_types: Optional[Set[ScopeType]] = None,
+        prev_types: Optional[set[ScopeType]] = None,
         follow: Optional[ScopeType] = None,
     ) -> Match[str]:
         if (
@@ -80,8 +82,9 @@ class ScopeDecoder(Protocol):
     def decode(
         cls,
         s: str,
-        prev_types: Optional[Set[ScopeType]] = None,
+        prev_types: Optional[set[ScopeType]] = None,
         follow: Optional[ScopeType] = None,
+        base: int = 0,
     ):
         ...
 
@@ -96,11 +99,12 @@ class SoloDecoder(ScopeDecoder):
     def decode(
         cls,
         s: str,
-        prev_types: Optional[Set[ScopeType]] = None,
+        prev_types: Optional[set[ScopeType]] = None,
         follow: Optional[ScopeType] = None,
+        base: int = 0,
     ) -> int:
         cls.match(s, prev_types, follow)
-        return int(s)
+        return shift_0(int(s)) if base == 1 else int(s)
 
 
 class EveryDecoder(ScopeDecoder):
@@ -113,8 +117,9 @@ class EveryDecoder(ScopeDecoder):
     def decode(
         cls,
         s: str,
-        prev_types: Optional[Set[ScopeType]] = None,
+        prev_types: Optional[set[ScopeType]] = None,
         follow: Optional[ScopeType] = None,
+        base: int = 0,
     ) -> None:
         cls.match(s, prev_types, follow)
         return None
@@ -130,11 +135,14 @@ class EnumDecoder(ScopeDecoder):
     def decode(
         cls,
         s: str,
-        prev_types: Optional[Set[ScopeType]] = None,
+        prev_types: Optional[set[ScopeType]] = None,
         follow: Optional[ScopeType] = None,
-    ) -> List[int]:
+        base: int = 0,
+    ) -> list[int]:
         cls.match(s, prev_types, follow)
-        return [int(m) for m in s.split(",") if m != ""]
+        return [
+            shift_0(int(m)) if base == 1 else int(m) for m in s.split(",") if m != ""
+        ]
 
 
 class SeqDecoder(ScopeDecoder):
@@ -147,9 +155,10 @@ class SeqDecoder(ScopeDecoder):
     def decode(
         cls,
         s: str,
-        prev_types: Optional[Set[ScopeType]] = None,
+        prev_types: Optional[set[ScopeType]] = None,
         follow: Optional[ScopeType] = None,
-    ) -> Tuple[int, int, int]:
+        base: int = 0,
+    ) -> tuple[int, int, int]:
         matches = cls.match(s, prev_types, follow)
 
         nums, mod = matches.groups()
@@ -158,7 +167,9 @@ class SeqDecoder(ScopeDecoder):
         if nums == "*":
             return (0, -1, mod)
         start, end = nums.split("~")
-        return (int(start), int(end), mod)
+        start = shift_0(int(start)) if base == 1 else int(start)
+        end = shift_0(int(end)) if base == 1 else int(end)
+        return (start, end, mod)
 
 
 class SpanDecoder(ScopeDecoder):
@@ -170,12 +181,19 @@ class SpanDecoder(ScopeDecoder):
     def decode(
         cls,
         s: str,
-        prev_types: Set[ScopeType] | None = None,
+        prev_types: set[ScopeType] | None = None,
         follow: ScopeType | None = None,
-    ):
+        base: int = 0,
+    ) -> tuple[int, int]:
         matches = cls.match(s, prev_types, follow)
         st, end = matches.groups()
-        st = int(st) if st is None else 0
-        end = int(end) if end is None else -1
+        if st is None:
+            st = 0
+        else:
+            st = shift_0(int(st)) if base == 1 else int(st)
 
+        if end is None:
+            end = -1
+        else:
+            end = shift_0(int(end)) if base == 1 else int(end)
         return st, end

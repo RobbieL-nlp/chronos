@@ -1,7 +1,6 @@
 from calendar.node import LinkMarkT
 from mark import MarkT, SpecT, load_mark
 from utils import Meta
-from typing import List, Tuple
 
 
 class Day(LinkMarkT, metaclass=Meta, cap=30):
@@ -21,28 +20,28 @@ class Day(LinkMarkT, metaclass=Meta, cap=30):
         return self._mark.cap
 
     @property
-    def marks(self) -> Tuple[int, ...]:
+    def marks(self) -> tuple[int, ...]:
         return self._mark.marks
 
     @property
     def mark(self) -> MarkT:
         return self._mark
 
-    def contains(self, n: List[int]) -> bool:
+    def contains(self, n: list[int]) -> bool:
         return self._mark.contains(n.pop())
 
-    def prev(self, n: List[int], leap: int) -> Tuple[int, ...]:
+    def prev(self, n: list[int], leap: int) -> tuple[int, ...]:
         num, _ = self._mark.prev(n.pop(), leap)
         return (num,)
 
-    def next(self, n: List[int], leap: int) -> Tuple[int, ...]:
+    def next(self, n: list[int], leap: int) -> tuple[int, ...]:
         num, _ = self._mark.next(n.pop(), leap)
         return (num,)
 
-    def cost_ahead(self, n: List[int]) -> int:
+    def cost_ahead(self, n: list[int]) -> int:
         return self._mark.cost_ahead(n.pop())
 
-    def cost_behind(self, n: List[int]) -> int:
+    def cost_behind(self, n: list[int]) -> int:
         return self._mark.cost_behind(n.pop())
 
 

@@ -1,5 +1,4 @@
 from functools import cached_property
-from typing import List, Tuple
 from calendar.day import DOWeek, Day
 from calendar.node import Node
 from exceptions import Inadequate
@@ -8,17 +7,17 @@ from utils import Meta
 
 
 class Week(Node[Day], metaclass=Meta, cap=3):
-    def load_nodes(self, specs: List[SpecT]) -> Tuple[Day, ...]:
+    def load_nodes(self, specs: list[SpecT]) -> tuple[Day, ...]:
         return (DOWeek(specs[0]),)
 
-    def which_node(self, n: int) -> Tuple[Day, int]:
+    def which_node(self, n: int) -> tuple[Day, int]:
         return self.nodes[0], 0
 
-    def nodes_behind(self, n: int) -> Tuple[int, ...]:
+    def nodes_behind(self, n: int) -> tuple[int, ...]:
         return (self.mark.cost_behind(n),)
 
     @cached_property
-    def total_nodes_count(self) -> Tuple[int, ...]:
+    def total_nodes_count(self) -> tuple[int, ...]:
         return (self.mark.count,)
 
     def shortcut_next(self, n: int, leap: int) -> MarkC:

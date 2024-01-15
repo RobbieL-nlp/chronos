@@ -1,12 +1,13 @@
 from datetime import date, datetime
-from typing import Protocol, Tuple
+from typing import Protocol
 
-from calendar.year import  year_pattern_of
+from calendar.year import year_pattern_of
+from utils import shift_0
 
 
 class DTE(Protocol):
     @staticmethod
-    def encode(now: datetime) -> Tuple[int, ...]:
+    def encode(now: datetime) -> tuple[int, ...]:
         ...
 
 
@@ -14,9 +15,9 @@ class DTEncM(DTE):
     @staticmethod
     def encode(now: datetime):
         return (
-            now.year,
-            now.month,
-            now.day,
+            shift_0(now.year),
+            shift_0(now.month),
+            shift_0(now.day),
             now.hour,
             now.minute,
             now.second,
@@ -25,7 +26,7 @@ class DTEncM(DTE):
 
 class DTEncMW(DTE):
     @staticmethod
-    def encode(now: datetime) -> Tuple[int, ...]:
+    def encode(now: datetime) -> tuple[int, ...]:
         year, woy, wd = now.isocalendar()
         pt = year_pattern_of(year, 1)
 
@@ -37,17 +38,25 @@ class DTEncMW(DTE):
             wk_sum += wkm
             m += 1
         wom = woy - wk_sum + wkm
-        return (year, m, wom, wd, now.hour, now.minute, now.second)
+        return (
+            shift_0(year),
+            shift_0(m),
+            shift_0(wom),
+            shift_0(wd),
+            now.hour,
+            now.minute,
+            now.second,
+        )
 
 
 class DTEncW(DTE):
     @staticmethod
-    def encode(now: datetime) -> Tuple[int, ...]:
+    def encode(now: datetime) -> tuple[int, ...]:
         y, w, d = now.isocalendar()
         return (
-            y,
-            w,
-            d,
+            shift_0(y),
+            shift_0(w),
+            shift_0(d),
             now.hour,
             now.minute,
             now.second,
@@ -56,13 +65,12 @@ class DTEncW(DTE):
 
 class DTEncD(DTE):
     @staticmethod
-    def encode(now: datetime) -> Tuple[int, ...]:
+    def encode(now: datetime) -> tuple[int, ...]:
         d1 = date(now.year, 1, 1)
-        dt = (now.date() - d1).days + 1
+        dt = (now.date() - d1).days
         return (
-            now.year,
+            shift_0(now.year),
             dt,
-            now.hour,
             now.hour,
             now.minute,
             now.second,
