@@ -1,6 +1,6 @@
 from typing import Callable
-from clock.hand import Hour, Minute, Second
-from mark import MarkT, SpecT
+from .hand import Hour, Minute, Second
+from ..mark import SpecT
 
 TimeT = tuple[int, int, int]
 MarkF = Callable[[int, int], tuple[int, int]]
@@ -8,43 +8,94 @@ ClockF = Callable[[TimeT, int], tuple[TimeT, int]]
 
 
 class Clock:
-    __slots__ = ("_hour", "_minute", "_second")
+    __slots__ = ("_hands",)
 
     def __init__(self, hour: SpecT, mins: SpecT, sec: SpecT) -> None:
-        self._hour = Hour(hour)
-        self._minute = Minute(mins)
-        self._second = Second(sec)
+        self._hands = (Hour(hour), Minute(mins), Second(sec))
 
-    def _travel(self, now: TimeT, leap: int, fn: str) -> tuple[TimeT, int]:
-        h, m, s = now
-        func: MarkF = getattr(self._second, fn)
-        s, aux = func(s, leap)
+    @property
+    def hands(self):
+        return self._hands
 
-        leap = aux + int(m not in self._minute)
-        if leap > 0:
-            func = getattr(self._minute, fn)
-            m, aux = func(m, leap)
+    @property
+    def second(self):
+        return self.hands[2]
 
-        l = aux + int(h not in self._hour)
-        if l > 0:
-            func = getattr(self._hour, fn)
-            h, aux = func(h, l)
+    @property
+    def minute(self):
+        return self.hands[1]
 
-        return (h, m, s), aux
+    @property
+    def hour(self):
+        return self.hands[0]
 
-    def prev(self, now: TimeT, leap: int = 1):
-        return self._travel(now, leap, "prev")
+    def reset_prev(self, now: TimeT) -> tuple[list[int], int, int]:
+        pts = list(now)
+        max_len = len(self.hands)
+        x = 0
+        while x < max_len and now[x] in self.hands[x]:
+            x += 1
 
-    def next(self, now: TimeT, leap: int = 1):
-        return self._travel(now, leap, "next")
+        if x == max_len:
+            return pts, 0, 0
+
+        pts[x], borrow = self.hands[x].prev(now[x], 1)
+
+        bx = x - 1
+        while borrow > 0 and bx >= 0:
+            pts[bx], borrow = self.hands[bx].prev(now[bx], borrow)
+            bx -= 1
+
+        for a in range(x + 1, max_len):
+            pts[a] = self.hands[a].last
+
+        return pts, int(x != max_len), borrow
+
+    def reset_next(self, now: TimeT) -> tuple[list[int], int, int]:
+        pts = list(now)
+        max_len = len(self.hands)
+        x = 0
+        while x < max_len and now[x] in self.hands[x]:
+            x += 1
+
+        if x == max_len:
+            return pts, 0, 0
+        
+        pts[x], carry = self.hands[x].next(now[x], 1)
+
+        cx = x - 1
+        while carry > 0 and cx >= 0:
+            pts[cx], carry = self.hands[cx].next(now[cx], carry)
+            cx -= 1
+
+        for a in range(x + 1, max_len):
+            pts[a] = self.hands[a].start
+
+        return pts, int(x != max_len), carry
+
+    def prev(self, now: TimeT, leap: int = 1) -> tuple[TimeT, int]:
+        marks, reset, bo = self.reset_prev(now)
+
+        leap_left = leap - reset
+        x = len(self.hands) - 1
+        while leap_left > 0 and x >= 0:
+            marks[x], leap_left = self.hands[x].prev(marks[x], leap_left)
+            x -= 1
+
+        return (marks[0], marks[1], marks[2]), leap_left + bo
+
+    def next(self, now: TimeT, leap: int = 1) -> tuple[TimeT, int]:
+        marks, reset, bo = self.reset_next(now)
+
+        leap_left = leap - reset
+        x = len(self.hands) - 1
+        while leap_left > 0 and x >= 0:
+            marks[x], leap_left = self.hands[x].next(marks[x], leap_left)
+            x -= 1
+
+        return (marks[0], marks[1], marks[2]), leap_left + bo
 
     def contains(self, now: TimeT) -> bool:
-        return all(
-            (
-                self._second.contains(now[2]),
-                self._minute.contains(now[1]),
-                self._hour.contains(now[0]),
-            )
-        )
+        return all(now[x] in self.hands[x] for x in range(len(self.hands) - 1, -1, -1))
 
     __contains__ = contains

@@ -20,6 +20,8 @@ class MarkT(Protocol):
     count: int
     # the max mark number
     cap: int
+    start: int
+    last: int
 
     def prev(self, n: int, leap: int) -> MarkC:
         """borrow happens when across the base"""
@@ -89,6 +91,14 @@ class Solo(MarkT):
     def mark(self) -> int:
         return self._mark
 
+    @property
+    def start(self) -> int:
+        return self.mark
+
+    @property
+    def last(self) -> int:
+        return self.mark
+
     @cached_property
     def marks(self) -> tuple[int]:
         return (self.mark,)
@@ -135,7 +145,15 @@ class Every(MarkT):
 
     @cached_property
     def marks(self) -> tuple[int, ...]:
-        return tuple(range(self.cap))
+        return tuple(range(self.count))
+
+    @property
+    def start(self) -> int:
+        return 0
+
+    @property
+    def last(self) -> int:
+        return self.cap
 
     def prev(self, n: int, leap: int) -> MarkC:
         dist = leap - n  # # of leaps to base from the destination
@@ -232,6 +250,10 @@ class Seq(MarkT):
         return self._itv
 
     @cached_property
+    def last(self) -> int:
+        return self.last_nth(1)
+
+    @cached_property
     def cross_base(self) -> bool:
         return self.start > self.end
 
@@ -326,7 +348,7 @@ class Seq(MarkT):
 
         nth = pos + leap
         num = self.nth(nth)
-        carry += (leap - 1) // self.count + int(self.nth(pos + 1) > num)
+        carry += leap // self.count + int(self.nth(pos) > num)
         return num, carry
 
     def leaps_left(self, n: int) -> int:
@@ -360,10 +382,12 @@ class Seq(MarkT):
         if self.end < n < self.start:
             return self.count - self.left_count
 
-        if n >= self.start:
-            return self.count - self.leaps_left(n) + self.count - self.left_count
+        has_leap = -(self.has_past(n) // -self.itv)
 
-        return self.count - self.leaps_left(n) - self.left_count
+        if n >= self.start:
+            return has_leap + self.count - self.left_count
+
+        return has_leap - self.left_count
 
 
 class EnumM(MarkT):
@@ -410,8 +434,16 @@ class EnumM(MarkT):
     def marks(self) -> tuple[int, ...]:
         return self._marks
 
+    @property
+    def start(self) -> int:
+        return self.marks[0]
+
+    @property
+    def last(self) -> int:
+        return self.marks[-1]
+
     def cross(self, n: int) -> bool:
-        return self.marks[0] > n or self.marks[-1] < n
+        return self.marks[0] <= n <= self.marks[-1]
 
     def bin_of(self, n: int) -> int:
         """n must be within range, otherwise incorrect result"""
@@ -455,7 +487,7 @@ class EnumM(MarkT):
 
         nth = pos + leap
         num = self.nth(nth)
-        carry += (leap - 1) // self.count + int(self.nth(pos + 1) > num)
+        carry += leap // self.count + int(self.nth(pos) > num)
         return num, carry
 
     def cost_ahead(self, n: int) -> int:
@@ -471,7 +503,7 @@ class EnumM(MarkT):
         if n > self.marks[-1]:
             return self.count
         pos = self.bin_of(n)
-        return pos + int(self.marks[n] != n)
+        return pos + int(self.marks[pos] != n)
 
     def contains(self, n: int) -> bool:
         return n in self._mark_set

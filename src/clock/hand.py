@@ -1,5 +1,5 @@
-from mark import MarkC, MarkT, SpecT, load_mark
-from utils import Meta
+from ..mark import MarkC, MarkT, SpecT, load_mark
+from ..utils import Meta
 
 
 class Hand(MarkT, metaclass=Meta, cap=59):
@@ -7,7 +7,7 @@ class Hand(MarkT, metaclass=Meta, cap=59):
 
     def __init__(self, spec: SpecT) -> None:
         cap = getattr(self, Meta.field_name("cap"))
-        self._mark: MarkT = load_mark(spec, cap)
+        self._mark: MarkT = load_mark(spec, cap=cap)
 
     @property
     def marks(self) -> tuple[int, ...]:
@@ -16,6 +16,14 @@ class Hand(MarkT, metaclass=Meta, cap=59):
     @property
     def cap(self) -> int:
         return self._mark.cap
+
+    @property
+    def start(self) -> int:
+        return self._mark.start
+
+    @property
+    def last(self) -> int:
+        return self._mark.last
 
     @property
     def count(self) -> int:

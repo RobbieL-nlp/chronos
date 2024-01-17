@@ -1,7 +1,8 @@
 from abc import ABCMeta
+from typing import _ProtocolMeta
 
 
-class Meta(ABCMeta):
+class Meta(_ProtocolMeta, ABCMeta):
     def __new__(cls, name, base, dict, **kwargs):
         cls_ = super().__new__(cls, name, base, dict)
         for k, v in kwargs.items():

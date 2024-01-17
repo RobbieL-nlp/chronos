@@ -4,7 +4,7 @@ from calendar.day import DOLeapY, DOYear, Day
 from calendar.month import WM, WMC, Month, MonthLY, week_month_cls
 from calendar.node import Node, NodeT
 from calendar.week import WOLYear, WOYear, Week
-from mark import Every, MarkC, Seq, SpecT
+from mark import SpecT
 from calendar import isleap
 
 
