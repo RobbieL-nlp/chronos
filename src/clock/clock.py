@@ -60,7 +60,7 @@ class Clock:
 
         if x == max_len:
             return pts, 0, 0
-        
+
         pts[x], carry = self.hands[x].next(now[x], 1)
 
         cx = x - 1
@@ -74,26 +74,24 @@ class Clock:
         return pts, int(x != max_len), carry
 
     def prev(self, now: TimeT, leap: int = 1) -> tuple[TimeT, int]:
-        marks, reset, bo = self.reset_prev(now)
-
-        leap_left = leap - reset
+        """now should be reset already"""
+        marks = list(now)
         x = len(self.hands) - 1
-        while leap_left > 0 and x >= 0:
-            marks[x], leap_left = self.hands[x].prev(marks[x], leap_left)
+        while leap > 0 and x >= 0:
+            marks[x], leap = self.hands[x].prev(marks[x], leap)
             x -= 1
 
-        return (marks[0], marks[1], marks[2]), leap_left + bo
+        return (marks[0], marks[1], marks[2]), leap
 
     def next(self, now: TimeT, leap: int = 1) -> tuple[TimeT, int]:
-        marks, reset, bo = self.reset_next(now)
+        marks = list(now)
 
-        leap_left = leap - reset
         x = len(self.hands) - 1
-        while leap_left > 0 and x >= 0:
-            marks[x], leap_left = self.hands[x].next(marks[x], leap_left)
+        while leap > 0 and x >= 0:
+            marks[x], leap = self.hands[x].next(marks[x], leap)
             x -= 1
 
-        return (marks[0], marks[1], marks[2]), leap_left + bo
+        return (marks[0], marks[1], marks[2]), leap
 
     def contains(self, now: TimeT) -> bool:
         return all(now[x] in self.hands[x] for x in range(len(self.hands) - 1, -1, -1))
