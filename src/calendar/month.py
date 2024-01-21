@@ -1,9 +1,9 @@
 from typing import TypeVar
-from calendar.day import Day, DOLeapFeb, DOFeb, DOMonth, DOLongM
-from calendar.node import Node
-from calendar.week import WOLMonth, Week
-from mark import SpecT
-from utils import Meta
+from .day import Day, DOLeapFeb, DOFeb, DOMonth, DOLongM
+from .node import Node
+from .week import WOLMonth, Week
+from ..mark import SpecT
+from ..utils import Meta
 
 LONG_MONTH = (1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1)
 
@@ -19,7 +19,7 @@ class Month(Node[Day], metaclass=Meta, cap=11):
     def which_node(self, n: int) -> tuple[Day, int]:
         if LONG_MONTH[n]:
             return self.nodes[1], 1
-        if n != 2:
+        if n != 1:
             return self.nodes[0], 0
         return self.nodes[-1], 2
 

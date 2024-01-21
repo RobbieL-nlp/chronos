@@ -1,7 +1,7 @@
 from enum import Enum
-from calendar.year import YT, YTC, DYear, WMYear, WYear, Year
+from .year import YT, YTC, DYear, WMYear, WYear, Year
 
-from mark import SpecT
+from ..mark import SpecT
 
 
 class CMode(str, Enum):
@@ -31,8 +31,14 @@ class Calendar:
     def mode(self):
         return self._mode
 
+    def reset_prev(self, num: list[int], reset: bool = False):
+        return self._node.reset_prev(num, reset)
+
+    def reset_next(self, num: list[int], reset: bool = False):
+        return self._node.reset_next(num, reset)
+
     def prev(self, num: list[int], leap=1):
-        """ "num: reverse order"""
+        """ "num: reverse order and reset"""
         return self._node.prev(num, leap)
 
     def next(self, num: list[int], leap=1):

@@ -1,10 +1,10 @@
 from datetime import date
 from typing import Callable, TypeVar, Union
-from calendar.day import DOLeapY, DOYear, Day
-from calendar.month import WM, WMC, Month, MonthLY, week_month_cls
-from calendar.node import Node, NodeT
-from calendar.week import WOLYear, WOYear, Week
-from mark import SpecT
+from .day import DOLeapY, DOYear, Day
+from .month import WM, WMC, Month, MonthLY, week_month_cls
+from .node import Node, NodeT
+from .week import WOLYear, WOYear, Week
+from ..mark import SpecT
 from calendar import isleap
 
 

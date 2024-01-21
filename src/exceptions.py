@@ -12,3 +12,7 @@ class NoMatch(Exception):
 
 class ModeMismatch(Exception):
     ...
+
+
+class Indecisive(Exception):
+    ...

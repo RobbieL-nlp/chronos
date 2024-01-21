@@ -1,9 +1,9 @@
 from functools import cached_property
-from calendar.day import DOWeek, Day
-from calendar.node import Node
-from exceptions import Inadequate
-from mark import MarkC, SpecT
-from utils import Meta
+from .day import DOWeek, Day
+from .node import Node
+from ..exceptions import Inadequate
+from ..mark import MarkC, SpecT
+from ..utils import Meta
 
 
 class Week(Node[Day], metaclass=Meta, cap=3):
@@ -14,7 +14,7 @@ class Week(Node[Day], metaclass=Meta, cap=3):
         return self.nodes[0], 0
 
     def nodes_behind(self, n: int) -> tuple[int, ...]:
-        return (self.mark.cost_behind(n),)
+        return (self.mark.cost_behind(n) + 1,)
 
     @cached_property
     def total_nodes_count(self) -> tuple[int, ...]:
@@ -28,7 +28,7 @@ class Week(Node[Day], metaclass=Meta, cap=3):
         num, carry = self.mark.next(n, stride)
         if carry > 0:
             raise Inadequate
-        leap_left = leap % count
+        leap_left = leap - count * stride
         return num, leap_left
 
     def shortcut_prev(self, n: int, leap: int) -> MarkC:
@@ -39,7 +39,7 @@ class Week(Node[Day], metaclass=Meta, cap=3):
         num, carry = self.mark.prev(n, stride)
         if carry > 0:
             raise Inadequate
-        leap_left = leap % count
+        leap_left = leap - count * stride
         return num, leap_left
 
 
