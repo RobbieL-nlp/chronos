@@ -1,10 +1,10 @@
 from enum import IntEnum
 from re import Match, Pattern
 import re
-from typing import Optional, Protocol
-from exceptions import NoMatch
-from mark import SpecT
-from utils import shift_0
+from typing import _ProtocolMeta, Callable, Optional, Protocol
+from ...exceptions import NoMatch
+from ...mark import SpecT
+from ...utils import shift_0
 
 
 class ScopeType(IntEnum):
@@ -16,7 +16,27 @@ class ScopeType(IntEnum):
     SPAN = 4
 
 
-class ScopeDecoder(Protocol):
+class ScopePrecheckMeta(_ProtocolMeta):
+    def __new__(cls, name, base, dict, **kwargs):
+        cls_ = super().__new__(cls, name, base, dict)
+        setattr(
+            cls_,
+            "__checks__",
+            [
+                getattr(cls_, fn)
+                for fn, opt in (
+                    ("_check_pre", "prerequisite"),
+                    ("_check_occur", "no_occur"),
+                    ("_check_follow", "follow"),
+                    ("_check_apart", "apart"),
+                )
+                if getattr(cls_, opt)
+            ],
+        )
+        return cls_
+
+
+class ScopeDecoder(Protocol, metaclass=ScopePrecheckMeta):
     pattern: Pattern
     prerequisite: tuple[ScopeType, ...] = ()
     no_occur: tuple[ScopeType, ...] = ()
@@ -31,7 +51,7 @@ class ScopeDecoder(Protocol):
 
     @classmethod
     def _check_occur(cls, *, prev_types: set[ScopeType], **kargs) -> bool:
-        return all(p not in prev_types for p in cls.prerequisite)
+        return all(p not in prev_types for p in cls.no_occur)
 
     @classmethod
     def _check_follow(cls, *, follow: ScopeType, **kwargs) -> bool:
@@ -41,21 +61,12 @@ class ScopeDecoder(Protocol):
     def _check_apart(cls, *, follow: ScopeType, **kwargs) -> bool:
         return follow != cls.apart
 
-    __checks__ = [
-        fn
-        for fn, opt in (
-            (_check_pre, prerequisite),
-            (_check_occur, no_occur),
-            (_check_follow, follow),
-            (_check_apart, apart),
-        )
-        if opt
-    ]
+    __checks__: list[Callable[..., bool]] = []
 
     @classmethod
     def pre_check(cls, prev_types: set[ScopeType], follow: ScopeType):
         return all(
-            fn(cls, prev_types=prev_types, follow=follow) for fn in cls.__checks__
+            fn(prev_types=prev_types, follow=follow) for fn in cls.__checks__
         )
 
     @classmethod
@@ -91,7 +102,6 @@ class ScopeDecoder(Protocol):
 
 class SoloDecoder(ScopeDecoder):
     pattern = re.compile(r"^-?\d+$")
-    no_occur = (ScopeType.SPAN,)
 
     T = ScopeType.SOLO
 
@@ -146,7 +156,7 @@ class EnumDecoder(ScopeDecoder):
 
 
 class SeqDecoder(ScopeDecoder):
-    pattern = re.compile(r"^(\*|-?\d+~-?\d+)(/\d+)?$")
+    pattern = re.compile(r"^(\*(?=/\d+)|-?\d+~-?\d+)(/\d+)?$")
     no_occur = (ScopeType.SPAN,)
 
     T = ScopeType.SEQ

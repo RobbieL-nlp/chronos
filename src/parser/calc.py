@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
 from typing import Protocol
-from calendar.year import year_pattern_of
+from ..calendar.year import year_pattern_of
 
-from clock.clock import TimeT
-from utils import reload_1
+from ..clock.clock import TimeT
+from ..utils import reload_1
 
 
 class CalcP(Protocol):
@@ -42,6 +42,10 @@ class CalcDecMW(CalcP):
     def decode(date: tuple[int, ...], clock: TimeT) -> datetime:
         date = tuple(reload_1(_) for _ in date)
         pt = year_pattern_of(date[0], 1)
-        woy = date[2] + sum(4 + pt >> m & 1 for m in range(date[1]))
+        woy = (
+            date[2]
+            + (date[1] - 1) * 4
+            + sum(pt >> (12 - m) & 1 for m in range(1, date[1]))
+        )
         dt = datetime.fromisocalendar(date[0], woy, date[3])
         return dt.replace(hour=clock[0], minute=clock[1], second=clock[2])

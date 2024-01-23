@@ -1,7 +1,7 @@
-from calendar.calendar import CMode
-from exceptions import ModeMismatch, NoMatch
-from mark import SpecT
-from parser.specs.scope import (
+from ...calendar.calendar import CMode
+from ...exceptions import ModeMismatch, NoMatch
+from ...mark import SpecT
+from .scope import (
     ScopeType,
     SpanDecoder,
     SoloDecoder,
@@ -58,7 +58,10 @@ class PeriodDecoder:
         if len(scopes) == mode_len - 1:
             codes.append((0, -1))
 
-        calendar, clock = codes[:-3:-1], codes[-3:]
+        calendar, clock = codes[-4::-1], codes[-3:]
         calendar_st, calendar_end = zip(*calendar)
         clock_st, clock_end = zip(*clock)
-        return (calendar_st, calendar_end), (clock_st, clock_end)
+        return (list(calendar_st), list(calendar_end)), (
+            list(clock_st),
+            list(clock_end),
+        )

@@ -84,7 +84,7 @@ YEAR_PATTERN = (
 
 
 def year_pattern_of(y: int, base: int = 0) -> int:
-    x = 2 * d1_year(y) + int(isleap(y + 1 - base))
+    x = 2 * d1_year(y - base) + int(isleap(y + 1 - base))
     return YEAR_PATTERN[x]
 
 

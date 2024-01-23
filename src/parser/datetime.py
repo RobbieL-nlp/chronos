@@ -1,8 +1,8 @@
 from datetime import date, datetime
 from typing import Protocol
 
-from calendar.year import year_pattern_of
-from utils import shift_0
+from ..calendar.year import year_pattern_of
+from ..utils import shift_0
 
 
 class DTE(Protocol):
@@ -33,11 +33,13 @@ class DTEncMW(DTE):
         wk_sum = 0
         m = 0
         wkm = 0
-        while wk_sum <= woy:
-            wkm = 4 + (pt >> m & 1)
-            wk_sum += wkm
+        while wk_sum < woy:
             m += 1
+            wkm = 4 + (pt >> (12 - m) & 1)
+            wk_sum += wkm
+            
         wom = woy - wk_sum + wkm
+
         return (
             shift_0(year),
             shift_0(m),

@@ -1,6 +1,6 @@
-from calendar.calendar import CMode
-from exceptions import ModeMismatch, NoMatch
-from parser.specs.scope import EnumDecoder, EveryDecoder, SeqDecoder, SoloDecoder
+from ...calendar.calendar import CMode
+from ...exceptions import ModeMismatch, NoMatch
+from .scope import EnumDecoder, EveryDecoder, SeqDecoder, SoloDecoder
 
 
 class CronDecoder:
@@ -29,4 +29,4 @@ class CronDecoder:
         if len(scopes) == mode_len - 1:
             specs.append(0)
 
-        return specs[:-3:-1], specs[-3:]
+        return specs[-4::-1], specs[-3:]
