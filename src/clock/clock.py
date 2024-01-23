@@ -29,7 +29,10 @@ class Clock:
     def hour(self):
         return self.hands[0]
 
-    def reset_prev(self, now: TimeT) -> tuple[list[int], int, int]:
+    def reset_prev(self, now: TimeT, reset: bool = False) -> tuple[list[int], int, int]:
+        if reset:
+            return [x.last for x in self._hands], 1, 0
+
         pts = list(now)
         max_len = len(self.hands)
         x = 0
@@ -51,7 +54,10 @@ class Clock:
 
         return pts, int(x != max_len), borrow
 
-    def reset_next(self, now: TimeT) -> tuple[list[int], int, int]:
+    def reset_next(self, now: TimeT, reset: bool = False) -> tuple[list[int], int, int]:
+        if reset:
+            return [x.start for x in self._hands], 1, 0
+
         pts = list(now)
         max_len = len(self.hands)
         x = 0

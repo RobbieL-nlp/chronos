@@ -1,12 +1,14 @@
 from datetime import datetime, timedelta
 from typing import Callable, Optional
 
-from calendar.calendar import CMode, Calendar
-from clock.clock import Clock, TimeT
-from parser.calc import CalcDecD, CalcDecM, CalcDecMW, CalcDecW, CalcP
-from parser.datetime import DTE, DTEncD, DTEncM, DTEncMW, DTEncW
-from parser.specs.period import PeriodDecoder
-from parser.specs.point import CronDecoder
+from .calendar.calendar import CMode, Calendar
+from .clock.clock import Clock, TimeT
+from .parser.calc import CalcDecD, CalcDecM, CalcDecMW, CalcDecW, CalcP
+from .parser.datetime import DTE, DTEncD, DTEncM, DTEncMW, DTEncW
+from .parser.specs.period import PeriodDecoder
+from .parser.specs.point import CronDecoder
+from .calendar.calendar import CMode
+from .exceptions import Inadequate, Indecisive
 
 _MODE_CALC_DEC: dict[CMode, CalcP] = {
     CMode.D: CalcDecD,
@@ -54,43 +56,68 @@ class Chronos:
     def cron(self):
         return self._cron
 
+    def _reset(
+        self, pts: tuple[int, ...], fn: str, tfn: str
+    ) -> tuple[list[int], TimeT, int]:
+        cals = list(pts[-4::-1])
+        clocks = pts[-3], pts[-2], pts[-1]
+        try:
+            dts, ch, _ = getattr(self._calendar, fn)(cals)
+        except Indecisive:
+            raise Inadequate
+
+        clock_pts, ch, aux = getattr(self._clock, fn)(clocks, ch == 1)
+        if aux > 0:
+            dts = list(getattr(self._calendar, tfn)(dts, aux))
+
+        return dts, (clock_pts[0], clock_pts[1], clock_pts[2]), ch
+
     def prev(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
         now = now or datetime.now()
         encs = self._dt_enc.encode(now)
-        clocks, borrow = self._clock.prev((encs[-3], encs[-2], encs[-1]), leap)
-        dts = self._calendar.prev(list(encs[:-3:-1]), borrow)
+        dts, clocks, ch = self._reset(encs, "reset_prev", "prev")
+        leap -= ch
+        if leap == 0:
+            return self._calc_dec.decode(tuple(dts[::-1]), clocks)
 
-        return self._calc_dec.decode(dts, clocks)
+        clocks, borrow = self._clock.prev(clocks, leap)
+        dts = self._calendar.prev(dts, borrow)
+        return self._calc_dec.decode(dts[::-1], clocks)
 
     def next(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
         now = now or datetime.now()
         encs = self._dt_enc.encode(now)
-        clocks, carry = self._clock.next((encs[-3], encs[-2], encs[-1]), leap)
-        dts = self._calendar.next(list(encs[:-3:-1]), carry)
+        dts, clocks, ch = self._reset(encs, "reset_next", "next")
+        leap -= ch
+        if leap == 0:
+            return self._calc_dec.decode(tuple(dts[::-1]), clocks)
+        clocks, carry = self._clock.next(clocks, leap)
+        dts = self._calendar.next(dts, carry)
 
-        return self._calc_dec.decode(dts, clocks)
+        return self._calc_dec.decode(dts[::-1], clocks)
 
     def contains(self, now: Optional[datetime] = None) -> bool:
         now = now or datetime.now()
         encs = self._dt_enc.encode(now)
         return self._clock.contains(
             (encs[-3], encs[-2], encs[-1])
-        ) and self._calendar.contains(list(encs[:-3:-1]))
+        ) and self._calendar.contains(list(encs[-4::-1]))
 
     __contains__ = contains
 
 
+class _ChronosFromSpecs(Chronos):
+    def __init__(self, cal_specs, clock_specs, mode: CMode) -> None:
+        self._mode = mode
+        self._calendar = Calendar(cal_specs, self._mode)
+        self._clock = Clock(*clock_specs)
+
+        self._calc_dec = _MODE_CALC_DEC[self._mode]
+        self._dt_enc = _MODE_DT_ENC[self._mode]
+
+
 class ChronoPeriod:
-    __slots__ = (
-        "_start_calendar",
-        "_end_calendar",
-        "_start_clock",
-        "_end_clock",
-        "_mode",
-        "_cron",
-        "_calc_dec",
-        "_dt_enc",
-    )
+    __slots__ = ("_start", "_end", "_mode", "_cron")
 
     def __init__(self, cron: str, mode: CMode = CMode.M) -> None:
         crons = cron.split(";")
@@ -103,13 +130,8 @@ class ChronoPeriod:
 
         cal_specs, clock_specs = PeriodDecoder.decode(self._cron, self._mode)
 
-        self._start_calendar = Calendar(cal_specs[0], self._mode)
-        self._end_calendar = Calendar(cal_specs[1], self._mode)
-
-        self._start_clock = Clock(*clock_specs[0])
-        self._end_clock = Clock(*clock_specs[1])
-        self._calc_dec = _MODE_CALC_DEC[self._mode]
-        self._dt_enc = _MODE_DT_ENC[self._mode]
+        self._start = _ChronosFromSpecs(cal_specs[0], clock_specs[0], self._mode)
+        self._end = _ChronosFromSpecs(cal_specs[1], clock_specs[1], self._mode)
 
     @property
     def mode(self):
@@ -119,39 +141,17 @@ class ChronoPeriod:
     def cron(self):
         return self._cron
 
-    def _time_travel(
-        self,
-        cal_func: Callable[[list[int], int], tuple[int, ...]],
-        clock_func: Callable[[TimeT, int], tuple[TimeT, int]],
-        now: Optional[datetime] = None,
-        leap: int = 1,
-    ) -> datetime:
-        now = now or datetime.now()
-        encs = self._dt_enc.encode(now)
-        clocks, borrow = clock_func((encs[-3], encs[-2], encs[-1]), leap)
-        dts = cal_func(list(encs[:-3:-1]), borrow)
-
-        return self._calc_dec.decode(dts, clocks)
-
     def prev_start(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
-        return self._time_travel(
-            self._start_calendar.prev, self._start_clock.prev, now, leap
-        )
+        return self._start.prev(now, leap)
 
     def prev_end(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
-        return self._time_travel(
-            self._end_calendar.prev, self._end_clock.prev, now, leap
-        )
+        return self._end.prev(now, leap)
 
     def next_start(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
-        return self._time_travel(
-            self._start_calendar.next, self._start_clock.next, now, leap
-        )
+        return self._start.next(now, leap)
 
     def next_end(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
-        return self._time_travel(
-            self._end_calendar.next, self._end_clock.next, now, leap
-        )
+        return self._end.next(now, leap)
 
     def contains(self, now: Optional[datetime] = None) -> bool:
         now = now or datetime.now()
@@ -160,15 +160,7 @@ class ChronoPeriod:
     __contains__ = contains
 
     def start_contains(self, now: Optional[datetime] = None) -> bool:
-        now = now or datetime.now()
-        encs = self._dt_enc.encode(now)
-        return self._start_clock.contains(
-            (encs[-3], encs[-2], encs[-1])
-        ) and self._start_calendar.contains(list(encs[:-3:-1]))
+        return self._start.contains(now)
 
     def end_contains(self, now: Optional[datetime] = None) -> bool:
-        now = now or datetime.now()
-        encs = self._dt_enc.encode(now)
-        return self._end_clock.contains(
-            (encs[-3], encs[-2], encs[-1])
-        ) and self._end_calendar.contains(list(encs[:-3:-1]))
+        return self._end.contains(now)
