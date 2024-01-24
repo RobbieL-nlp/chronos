@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Callable, Optional
+from typing import Callable, Optional, Protocol
 
 from .calendar.calendar import CMode, Calendar
 from .clock.clock import Clock, TimeT
@@ -28,20 +28,27 @@ _MODE_DT_ENC: dict[CMode, DTE] = {
 MIN_DT_UNIT = timedelta(seconds=1)
 
 
-class Chronos:
-    __slots__ = ("_calendar", "_clock", "_mode", "_cron", "_calc_dec", "_dt_enc")
+class ChronosT(Protocol):
+    mode: CMode
 
-    def __init__(self, cron: str, mode: CMode = CMode.M) -> None:
-        crons = cron.split(";")
-        self._cron = crons[0].strip()
+    def prev(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
+        ...
 
-        if len(crons) > 1:
-            self._mode = CMode(crons[1].strip())
-        else:
-            self._mode = mode
+    def next(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
+        ...
 
-        cal_specs, clock_specs = CronDecoder.decode(self._cron, self._mode)
+    def contains(self, now: Optional[datetime] = None) -> bool:
+        ...
 
+    def __contains__(self, now: datetime) -> bool:
+        return self.contains(now)
+
+
+class _ChronosFromSpecs(ChronosT):
+    __slots__ = ("_calendar", "_clock", "_mode", "_calc_dec", "_dt_enc")
+
+    def __init__(self, cal_specs, clock_specs, mode: CMode) -> None:
+        self._mode = mode
         self._calendar = Calendar(cal_specs, self._mode)
         self._clock = Clock(*clock_specs)
 
@@ -51,10 +58,6 @@ class Chronos:
     @property
     def mode(self):
         return self._mode
-
-    @property
-    def cron(self):
-        return self._cron
 
     def _reset(
         self, pts: tuple[int, ...], fn: str, tfn: str
@@ -103,17 +106,26 @@ class Chronos:
             (encs[-3], encs[-2], encs[-1])
         ) and self._calendar.contains(list(encs[-4::-1]))
 
-    __contains__ = contains
 
+class Chronos(_ChronosFromSpecs):
+    __slots__ = "_cron"
 
-class _ChronosFromSpecs(Chronos):
-    def __init__(self, cal_specs, clock_specs, mode: CMode) -> None:
-        self._mode = mode
-        self._calendar = Calendar(cal_specs, self._mode)
-        self._clock = Clock(*clock_specs)
+    def __init__(self, cron: str, mode: CMode = CMode.M) -> None:
+        crons = cron.split(";")
+        self._cron = crons[0].strip()
 
-        self._calc_dec = _MODE_CALC_DEC[self._mode]
-        self._dt_enc = _MODE_DT_ENC[self._mode]
+        if len(crons) > 1:
+            _mode = CMode(crons[1].strip())
+        else:
+            _mode = mode
+
+        cal_specs, clock_specs = CronDecoder.decode(self._cron, _mode)
+
+        super().__init__(cal_specs, clock_specs, _mode)
+
+    @property
+    def cron(self):
+        return self._cron
 
 
 class ChronoPeriod:
@@ -141,26 +153,19 @@ class ChronoPeriod:
     def cron(self):
         return self._cron
 
-    def prev_start(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
-        return self._start.prev(now, leap)
+    @property
+    def start(self) -> ChronosT:
+        return self._start
 
-    def prev_end(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
-        return self._end.prev(now, leap)
-
-    def next_start(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
-        return self._start.next(now, leap)
-
-    def next_end(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
-        return self._end.next(now, leap)
+    @property
+    def end(self) -> ChronosT:
+        return self._end
 
     def contains(self, now: Optional[datetime] = None) -> bool:
         now = now or datetime.now()
-        return self.next_start(now) > self.next_end(now - MIN_DT_UNIT)
+        return self.start.next(now) > self.end.next(now - MIN_DT_UNIT)
 
     __contains__ = contains
 
-    def start_contains(self, now: Optional[datetime] = None) -> bool:
-        return self._start.contains(now)
 
-    def end_contains(self, now: Optional[datetime] = None) -> bool:
-        return self._end.contains(now)
+
