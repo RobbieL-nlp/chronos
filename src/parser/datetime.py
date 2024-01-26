@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Protocol
+from typing import Protocol, Tuple
 
 from ..calendar.year import year_pattern_of
 from ..utils import shift_0
@@ -7,7 +7,7 @@ from ..utils import shift_0
 
 class DTE(Protocol):
     @staticmethod
-    def encode(now: datetime) -> tuple[int, ...]:
+    def encode(now: datetime) -> Tuple[int, ...]:
         ...
 
 
@@ -26,7 +26,7 @@ class DTEncM(DTE):
 
 class DTEncMW(DTE):
     @staticmethod
-    def encode(now: datetime) -> tuple[int, ...]:
+    def encode(now: datetime) -> Tuple[int, ...]:
         year, woy, wd = now.isocalendar()
         pt = year_pattern_of(year, 1)
 
@@ -37,7 +37,7 @@ class DTEncMW(DTE):
             m += 1
             wkm = 4 + (pt >> (12 - m) & 1)
             wk_sum += wkm
-            
+
         wom = woy - wk_sum + wkm
 
         return (
@@ -53,7 +53,7 @@ class DTEncMW(DTE):
 
 class DTEncW(DTE):
     @staticmethod
-    def encode(now: datetime) -> tuple[int, ...]:
+    def encode(now: datetime) -> Tuple[int, ...]:
         y, w, d = now.isocalendar()
         return (
             shift_0(y),
@@ -67,7 +67,7 @@ class DTEncW(DTE):
 
 class DTEncD(DTE):
     @staticmethod
-    def encode(now: datetime) -> tuple[int, ...]:
+    def encode(now: datetime) -> Tuple[int, ...]:
         d1 = date(now.year, 1, 1)
         dt = (now.date() - d1).days
         return (

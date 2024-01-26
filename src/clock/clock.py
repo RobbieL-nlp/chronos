@@ -1,10 +1,10 @@
-from typing import Callable
+from typing import Callable, List, Tuple
 from .hand import Hour, Minute, Second
 from ..mark import SpecT
 
-TimeT = tuple[int, int, int]
-MarkF = Callable[[int, int], tuple[int, int]]
-ClockF = Callable[[TimeT, int], tuple[TimeT, int]]
+TimeT = Tuple[int, int, int]
+MarkF = Callable[[int, int], Tuple[int, int]]
+ClockF = Callable[[TimeT, int], Tuple[TimeT, int]]
 
 
 class Clock:
@@ -29,7 +29,7 @@ class Clock:
     def hour(self):
         return self.hands[0]
 
-    def reset_prev(self, now: TimeT, reset: bool = False) -> tuple[list[int], int, int]:
+    def reset_prev(self, now: TimeT, reset: bool = False) -> Tuple[List[int], int, int]:
         if reset:
             return [x.last for x in self._hands], 1, 0
 
@@ -54,7 +54,7 @@ class Clock:
 
         return pts, int(x != max_len), borrow
 
-    def reset_next(self, now: TimeT, reset: bool = False) -> tuple[list[int], int, int]:
+    def reset_next(self, now: TimeT, reset: bool = False) -> Tuple[List[int], int, int]:
         if reset:
             return [x.start for x in self._hands], 1, 0
 
@@ -79,7 +79,7 @@ class Clock:
 
         return pts, int(x != max_len), carry
 
-    def prev(self, now: TimeT, leap: int = 1) -> tuple[TimeT, int]:
+    def prev(self, now: TimeT, leap: int = 1) -> Tuple[TimeT, int]:
         """now should be reset already"""
         marks = list(now)
         x = len(self.hands) - 1
@@ -89,7 +89,7 @@ class Clock:
 
         return (marks[0], marks[1], marks[2]), leap
 
-    def next(self, now: TimeT, leap: int = 1) -> tuple[TimeT, int]:
+    def next(self, now: TimeT, leap: int = 1) -> Tuple[TimeT, int]:
         marks = list(now)
 
         x = len(self.hands) - 1

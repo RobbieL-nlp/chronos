@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 import unittest
 from src.calendar.calendar import CMode
 
@@ -7,16 +6,16 @@ from src.chronos import ChronoPeriod as OPeriod, Chronos
 
 
 class ChronoPeriod(OPeriod):
-    def prev_start(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
+    def prev_start(self, now=None, leap: int = 1) -> datetime:
         return self.start.prev(now, leap)
 
-    def prev_end(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
+    def prev_end(self, now=None, leap: int = 1) -> datetime:
         return self.end.prev(now, leap)
 
-    def next_start(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
+    def next_start(self, now=None, leap: int = 1) -> datetime:
         return self.start.next(now, leap)
 
-    def next_end(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
+    def next_end(self, now=None, leap: int = 1) -> datetime:
         return self.end.next(now, leap)
 
 

@@ -1,6 +1,11 @@
 from abc import abstractmethod
-from functools import cached_property
-from typing import Generic, TypeVar, Protocol
+
+try:
+    from functools import cached_property
+except ImportError:
+    from ..utils import cached_property
+
+from typing import Generic, List, Tuple, TypeVar, Protocol
 from ..exceptions import Inadequate, NoShortcut, Indecisive
 
 from ..mark import MarkC, MarkT, SpecT, load_mark
@@ -9,7 +14,7 @@ from ..utils import Meta
 
 class LinkMarkT(Protocol):
     # list of mark numbers
-    marks: tuple[int, ...]
+    marks: Tuple[int, ...]
     # count of mark numbers, length of marks
     count: int
     # the max mark number
@@ -20,45 +25,44 @@ class LinkMarkT(Protocol):
     def total_count(self) -> int:
         ...
 
-    def prev(self, n: list[int], leap: int) -> tuple[int, ...]:
+    def prev(self, n: List[int], leap: int) -> Tuple[int, ...]:
         ...
 
-    def next(self, n: list[int], leap: int) -> tuple[int, ...]:
+    def next(self, n: List[int], leap: int) -> Tuple[int, ...]:
         ...
 
-    def cost_ahead(self, n: list[int]) -> int:
+    def cost_ahead(self, n: List[int]) -> int:
         ...
 
-    def cost_behind(self, n: list[int]) -> int:
+    def cost_behind(self, n: List[int]) -> int:
         ...
 
-    def contains(self, n: list[int]) -> bool:
+    def contains(self, n: List[int]) -> bool:
         ...
 
-    def __contains__(self, n: list[int]) -> bool:
+    def __contains__(self, n: List[int]) -> bool:
         try:
             assert isinstance(n, list)
         except:
             raise TypeError
         return self.contains(n)
 
-    def reset_prev(self, n: list[int], reset: bool) -> tuple[list[int], int, int]:
+    def reset_prev(self, n: List[int], reset: bool) -> Tuple[List[int], int, int]:
         ...
 
-    def reset_next(self, n: list[int], reset: bool) -> tuple[list[int], int, int]:
+    def reset_next(self, n: List[int], reset: bool) -> Tuple[List[int], int, int]:
         ...
 
 
 NodeT = TypeVar("NodeT", bound=LinkMarkT)
-EMPTY_PTS: list[int] = []
 
 
 class Node(LinkMarkT, Generic[NodeT], metaclass=Meta, cap=9999):
     __slots__ = ("_nodes", "_mark")
 
-    def __init__(self, specs: list[SpecT]) -> None:
+    def __init__(self, specs: List[SpecT]) -> None:
         self._mark = load_mark(specs[-1], cap=getattr(self, Meta.field_name("cap")))
-        self._nodes: tuple[NodeT, ...] = self.load_nodes(specs[:-1])
+        self._nodes: Tuple[NodeT, ...] = self.load_nodes(specs[:-1])
 
     @property
     def mark(self):
@@ -81,11 +85,11 @@ class Node(LinkMarkT, Generic[NodeT], metaclass=Meta, cap=9999):
         return self._nodes
 
     @abstractmethod
-    def load_nodes(self, specs: list[SpecT]) -> tuple[NodeT, ...]:
+    def load_nodes(self, specs: List[SpecT]) -> Tuple[NodeT, ...]:
         ...
 
     @abstractmethod
-    def which_node(self, n: int) -> tuple[NodeT, int]:
+    def which_node(self, n: int) -> Tuple[NodeT, int]:
         ...
 
     @cached_property
@@ -102,7 +106,7 @@ class Node(LinkMarkT, Generic[NodeT], metaclass=Meta, cap=9999):
         """make sure leap_left never 0"""
         raise NoShortcut
 
-    def nodes_behind(self, n: int) -> tuple[int, ...]:
+    def nodes_behind(self, n: int) -> Tuple[int, ...]:
         """inclusive"""
         counts = [0] * len(self._nodes)
         for m in self.marks:
@@ -112,16 +116,16 @@ class Node(LinkMarkT, Generic[NodeT], metaclass=Meta, cap=9999):
                 break
         return tuple(counts)
 
-    def nodes_ahead(self, n: int) -> tuple[int, ...]:
+    def nodes_ahead(self, n: int) -> Tuple[int, ...]:
         totals = self.total_nodes_count
         behinds = self.nodes_behind(n)
         return tuple(totals[n] - behinds[n] for n in range(len(self._nodes)))
 
     @cached_property
-    def total_nodes_count(self) -> tuple[int, ...]:
+    def total_nodes_count(self) -> Tuple[int, ...]:
         return self.nodes_behind(self.marks[-1])
 
-    def cost_ahead(self, n: list[int]) -> int:
+    def cost_ahead(self, n: List[int]) -> int:
         """n must have reset"""
         curr = n.pop()
 
@@ -134,7 +138,7 @@ class Node(LinkMarkT, Generic[NodeT], metaclass=Meta, cap=9999):
             for n in range(len(nodes_ahead))
         )
 
-    def cost_behind(self, n: list[int]) -> int:
+    def cost_behind(self, n: List[int]) -> int:
         curr = n.pop()
 
         node, _ = self.which_node(curr)
@@ -149,7 +153,7 @@ class Node(LinkMarkT, Generic[NodeT], metaclass=Meta, cap=9999):
             + amount
         )
 
-    def reset_prev(self, n: list[int], reset: bool) -> tuple[list[int], int, int]:
+    def reset_prev(self, n: List[int], reset: bool) -> Tuple[List[int], int, int]:
         """the number list will be modified, if reset, ch will return 1"""
         curr = n.pop()
         if reset:
@@ -181,7 +185,7 @@ class Node(LinkMarkT, Generic[NodeT], metaclass=Meta, cap=9999):
         pts.append(curr)
         return pts, ch, borrow
 
-    def reset_next(self, n: list[int], reset: bool) -> tuple[list[int], int, int]:
+    def reset_next(self, n: List[int], reset: bool) -> Tuple[List[int], int, int]:
         curr = n.pop()
         if reset:
             curr = self.mark.start
@@ -212,7 +216,7 @@ class Node(LinkMarkT, Generic[NodeT], metaclass=Meta, cap=9999):
         pts.append(curr)
         return pts, ch, carry
 
-    def prev(self, n: list[int], leap: int) -> tuple[int, ...]:
+    def prev(self, n: List[int], leap: int) -> Tuple[int, ...]:
         """n has reset"""
         curr = n.pop()
         node, _ = self.which_node(curr)
@@ -253,7 +257,7 @@ class Node(LinkMarkT, Generic[NodeT], metaclass=Meta, cap=9999):
             return tuple(n)
         return node.prev(n, leap_left) + (curr,)
 
-    def next(self, n: list[int], leap: int) -> tuple[int, ...]:
+    def next(self, n: List[int], leap: int) -> Tuple[int, ...]:
         curr = n.pop()
 
         node, _ = self.which_node(curr)
@@ -291,7 +295,7 @@ class Node(LinkMarkT, Generic[NodeT], metaclass=Meta, cap=9999):
             return tuple(n)
         return node.next(n, leap_left) + (curr,)
 
-    def contains(self, n: list[int]) -> bool:
+    def contains(self, n: List[int]) -> bool:
         if n[-1] not in self.mark:
             return False
         node, _ = self.which_node(n[-1])

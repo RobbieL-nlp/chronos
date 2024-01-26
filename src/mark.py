@@ -1,8 +1,12 @@
-from typing import Protocol, TypeVar, Union
-from functools import cached_property
+from typing import List, Protocol, Set, Tuple, Union
+
+try:
+    from functools import cached_property
+except ImportError:
+    from utils import cached_property
 
 # [mark value, # of leap for upper level, borrow/carry considered when across base point]
-MarkC = tuple[int, int]
+MarkC = Tuple[int, int]
 
 
 class MarkT(Protocol):
@@ -15,7 +19,7 @@ class MarkT(Protocol):
     """
 
     # list of mark numbers
-    marks: tuple[int, ...]
+    marks: Tuple[int, ...]
     # count of mark numbers, length of marks
     count: int
     # the max mark number
@@ -100,7 +104,7 @@ class Solo(MarkT):
         return self.mark
 
     @cached_property
-    def marks(self) -> tuple[int]:
+    def marks(self) -> Tuple[int]:
         return (self.mark,)
 
     def prev(self, n: int, leap: int = 1) -> MarkC:
@@ -144,7 +148,7 @@ class Every(MarkT):
         return self._count
 
     @cached_property
-    def marks(self) -> tuple[int, ...]:
+    def marks(self) -> Tuple[int, ...]:
         return tuple(range(self.count))
 
     @property
@@ -295,7 +299,7 @@ class Seq(MarkT):
         return self.last_nth(1)
 
     @cached_property
-    def marks(self) -> tuple[int, ...]:
+    def marks(self) -> Tuple[int, ...]:
         return tuple(sorted(self.nth(x) for x in range(self.count)))
 
     def has_past(self, n: int) -> int:
@@ -393,7 +397,7 @@ class Seq(MarkT):
 class EnumM(MarkT):
     __slots__ = ("_cap", "_marks", "_mark_set")
 
-    def __init__(self, marks: list[int], cap: int) -> None:
+    def __init__(self, marks: List[int], cap: int) -> None:
         """
         params\n
         marks: list of numbers representing marks available in the cycle
@@ -411,7 +415,7 @@ class EnumM(MarkT):
         self._mark_set = self.__load_marks(marks)
         self._marks = tuple(sorted(self._mark_set))
 
-    def __load_marks(self, marks: list[int]) -> set[int]:
+    def __load_marks(self, marks: List[int]) -> Set[int]:
         assert len(marks) > 0, "marks list cannot be empty "
         mark_set = set()
 
@@ -431,7 +435,7 @@ class EnumM(MarkT):
         return len(self._marks)
 
     @property
-    def marks(self) -> tuple[int, ...]:
+    def marks(self) -> Tuple[int, ...]:
         return self._marks
 
     @property
@@ -509,7 +513,7 @@ class EnumM(MarkT):
         return n in self._mark_set
 
 
-SpecT = Union[int, None, tuple[int, int, int], list[int]]
+SpecT = Union[int, None, Tuple[int, int, int], List[int]]
 
 
 def load_mark(spec: SpecT, *args, **kwargs):

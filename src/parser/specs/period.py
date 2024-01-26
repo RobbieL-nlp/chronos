@@ -1,3 +1,4 @@
+from typing import List, Set, Tuple
 from ...calendar.calendar import CMode
 from ...exceptions import ModeMismatch, NoMatch
 from ...mark import SpecT
@@ -10,7 +11,7 @@ from .scope import (
     SeqDecoder,
 )
 
-PSpectT = tuple[SpecT, SpecT]
+PSpectT = Tuple[SpecT, SpecT]
 
 
 class PeriodDecoder:
@@ -19,7 +20,7 @@ class PeriodDecoder:
 
     @classmethod
     def decode_scope(
-        cls, s: str, prev_types: set[ScopeType], follow: ScopeType, base: int = 0
+        cls, s: str, prev_types: Set[ScopeType], follow: ScopeType, base: int = 0
     ):
         for dec in cls.scope_decoders:
             try:
@@ -38,7 +39,7 @@ class PeriodDecoder:
     @classmethod
     def decode(
         cls, cron: str, mode: CMode
-    ) -> tuple[tuple[list[SpecT], list[SpecT]], tuple[list[SpecT], list[SpecT]]]:
+    ) -> Tuple[Tuple[List[SpecT], List[SpecT]], Tuple[List[SpecT], List[SpecT]]]:
         scopes = cron.split()
         mode_len = cls.mode_len[mode]
         if len(scopes) < mode_len - 1 or len(scopes) > mode_len:

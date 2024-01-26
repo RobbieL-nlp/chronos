@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Callable, TypeVar, Union
+from typing import Dict, List, Tuple, Type, Union
 from .day import DOLeapY, DOYear, Day
 from .month import WM, WMC, Month, MonthLY, week_month_cls
 from .node import Node, NodeT
@@ -30,13 +30,13 @@ def d1_year(y: int) -> int:
 
 
 class LeapYearPattern(Node[NodeT]):
-    def which_node(self, n: int) -> tuple[NodeT, int]:
+    def which_node(self, n: int) -> Tuple[NodeT, int]:
         idx = int(isleap(n + 1))
         return self.nodes[idx], idx
 
 
 class Year(LeapYearPattern[Month], cap=9998):
-    def load_nodes(self, specs: list[SpecT]) -> tuple[Month, ...]:
+    def load_nodes(self, specs: List[SpecT]) -> Tuple[Month, ...]:
         return (
             Month(specs),
             MonthLY(specs),
@@ -44,7 +44,7 @@ class Year(LeapYearPattern[Month], cap=9998):
 
 
 class DYear(LeapYearPattern[Day], cap=9998):
-    def load_nodes(self, specs: list[SpecT]) -> tuple[Day, ...]:
+    def load_nodes(self, specs: List[SpecT]) -> Tuple[Day, ...]:
         return (
             DOYear(specs[0]),
             DOLeapY(specs[0]),
@@ -52,13 +52,13 @@ class DYear(LeapYearPattern[Day], cap=9998):
 
 
 class WYear(Node[Week], cap=9998):
-    def load_nodes(self, specs: list[SpecT]) -> tuple[Week, ...]:
+    def load_nodes(self, specs: List[SpecT]) -> Tuple[Week, ...]:
         return (
             WOYear(specs),
             WOLYear(specs),
         )
 
-    def which_node(self, n: int) -> tuple[Week, int]:
+    def which_node(self, n: int) -> Tuple[Week, int]:
         x = weeks_in_year(n + 1)
         return self.nodes[x], x
 
@@ -88,7 +88,7 @@ def year_pattern_of(y: int, base: int = 0) -> int:
     return YEAR_PATTERN[x]
 
 
-def load_wm_cls() -> tuple[dict[int, int], tuple[WMC, ...]]:
+def load_wm_cls() -> Tuple[Dict[int, int], Tuple[WMC, ...]]:
     pts = list(set(YEAR_PATTERN))
     pt_idx = {pts[x]: x for x in range(len(pts))}
     cls_tuple = tuple(
@@ -101,14 +101,14 @@ PATTERN_INDEX, WM_CLS = load_wm_cls()
 
 
 class WMYear(Node[WM], cap=9998):
-    def load_nodes(self, specs: list[SpecT]) -> tuple[WM, ...]:
+    def load_nodes(self, specs: List[SpecT]) -> Tuple[WM, ...]:
         return tuple(c(specs) for c in WM_CLS)
 
-    def which_node(self, n: int) -> tuple[WM, int]:
+    def which_node(self, n: int) -> Tuple[WM, int]:
         x = year_pattern_of(n)
         px = PATTERN_INDEX[x]
         return self.nodes[px], px
 
 
-YTC = Union[type[Year], type[WMYear], type[DYear], type[WYear]]
+YTC = Union[Type[Year], Type[WMYear], Type[DYear], Type[WYear]]
 YT = Union[Year, WMYear, DYear, WYear]

@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Protocol
+from typing import Protocol, Tuple
 from ..calendar.year import year_pattern_of
 
 from ..clock.clock import TimeT
@@ -8,13 +8,13 @@ from ..utils import reload_1
 
 class CalcP(Protocol):
     @staticmethod
-    def decode(date: tuple[int, ...], clock: TimeT) -> datetime:
+    def decode(date: Tuple[int, ...], clock: TimeT) -> datetime:
         ...
 
 
 class CalcDecM(CalcP):
     @staticmethod
-    def decode(date: tuple[int, ...], clock: TimeT) -> datetime:
+    def decode(date: Tuple[int, ...], clock: TimeT) -> datetime:
         return datetime(
             reload_1(date[0]),
             reload_1(date[1]),
@@ -25,21 +25,21 @@ class CalcDecM(CalcP):
 
 class CalcDecD(CalcP):
     @staticmethod
-    def decode(date: tuple[int, ...], clock: TimeT) -> datetime:
+    def decode(date: Tuple[int, ...], clock: TimeT) -> datetime:
         d1 = datetime(reload_1(date[0]), 1, 1, *clock)
         return d1 + timedelta(reload_1(date[1]) - 1)
 
 
 class CalcDecW(CalcP):
     @staticmethod
-    def decode(date: tuple[int, ...], clock: TimeT) -> datetime:
+    def decode(date: Tuple[int, ...], clock: TimeT) -> datetime:
         dt = datetime.fromisocalendar(*(reload_1(_) for _ in date))
         return dt.replace(hour=clock[0], minute=clock[1], second=clock[2])
 
 
 class CalcDecMW(CalcP):
     @staticmethod
-    def decode(date: tuple[int, ...], clock: TimeT) -> datetime:
+    def decode(date: Tuple[int, ...], clock: TimeT) -> datetime:
         date = tuple(reload_1(_) for _ in date)
         pt = year_pattern_of(date[0], 1)
         woy = (

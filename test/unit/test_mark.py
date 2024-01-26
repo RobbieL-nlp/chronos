@@ -18,7 +18,7 @@ class SoloTest(unittest.TestCase):
     def setUp(self) -> None:
         self.marks: list[Solo] = [s for cap in _CAPS for s in self.prepare_marks(cap)]
 
-    def prepare_marks(self, cap: int) -> tuple[Solo, ...]:
+    def prepare_marks(self, cap: int):
         candidates = list(range(1, cap))
         random.shuffle(candidates)
         return (

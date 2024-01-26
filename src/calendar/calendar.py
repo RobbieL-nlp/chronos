@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Dict, List
 from .year import YT, YTC, DYear, WMYear, WYear, Year
 
 from ..mark import SpecT
@@ -11,7 +12,7 @@ class CMode(str, Enum):
     W = "w"
 
 
-_cmode_cls: dict[CMode, YTC] = {
+_cmode_cls: Dict[CMode, YTC] = {
     CMode.D: DYear,
     CMode.M: Year,
     CMode.MW: WMYear,
@@ -22,7 +23,7 @@ _cmode_cls: dict[CMode, YTC] = {
 class Calendar:
     __slots__ = ("_node", "_mode")
 
-    def __init__(self, specs: list[SpecT], mode: CMode) -> None:
+    def __init__(self, specs: List[SpecT], mode: CMode) -> None:
         """ "specs: reverse order"""
         self._mode = mode
         self._node: YT = _cmode_cls[mode](specs)
@@ -31,20 +32,20 @@ class Calendar:
     def mode(self):
         return self._mode
 
-    def reset_prev(self, num: list[int], reset: bool = False):
+    def reset_prev(self, num: List[int], reset: bool = False):
         return self._node.reset_prev(num, reset)
 
-    def reset_next(self, num: list[int], reset: bool = False):
+    def reset_next(self, num: List[int], reset: bool = False):
         return self._node.reset_next(num, reset)
 
-    def prev(self, num: list[int], leap=1):
+    def prev(self, num: List[int], leap=1):
         """ "num: reverse order and reset"""
         return self._node.prev(num, leap)
 
-    def next(self, num: list[int], leap=1):
+    def next(self, num: List[int], leap=1):
         return self._node.next(num, leap)
 
-    def contains(self, num: list[int]) -> bool:
+    def contains(self, num: List[int]) -> bool:
         return self._node.contains(num)
 
     __contains__ = contains

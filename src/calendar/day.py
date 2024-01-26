@@ -1,3 +1,4 @@
+from typing import List, Tuple
 from ..exceptions import Indecisive
 from .node import LinkMarkT
 from ..mark import MarkT, SpecT, load_mark
@@ -21,31 +22,31 @@ class Day(LinkMarkT, metaclass=Meta, cap=30):
         return self._mark.cap
 
     @property
-    def marks(self) -> tuple[int, ...]:
+    def marks(self) -> Tuple[int, ...]:
         return self._mark.marks
 
     @property
     def mark(self) -> MarkT:
         return self._mark
 
-    def contains(self, n: list[int]) -> bool:
+    def contains(self, n: List[int]) -> bool:
         return self._mark.contains(n.pop())
 
-    def prev(self, n: list[int], leap: int) -> tuple[int, ...]:
+    def prev(self, n: List[int], leap: int) -> Tuple[int, ...]:
         num, _ = self._mark.prev(n.pop(), leap)
         return (num,)
 
-    def next(self, n: list[int], leap: int) -> tuple[int, ...]:
+    def next(self, n: List[int], leap: int) -> Tuple[int, ...]:
         num, _ = self._mark.next(n.pop(), leap)
         return (num,)
 
-    def cost_ahead(self, n: list[int]) -> int:
+    def cost_ahead(self, n: List[int]) -> int:
         return self._mark.cost_ahead(n.pop())
 
-    def cost_behind(self, n: list[int]) -> int:
+    def cost_behind(self, n: List[int]) -> int:
         return self._mark.cost_behind(n.pop())
 
-    def reset_prev(self, n: list[int], reset: bool) -> tuple[list[int], int, int]:
+    def reset_prev(self, n: List[int], reset: bool) -> Tuple[List[int], int, int]:
         curr = n.pop()
         if reset:
             return [self.mark.last], 1, 0
@@ -59,7 +60,7 @@ class Day(LinkMarkT, metaclass=Meta, cap=30):
 
         return [curr], 1, borrow
 
-    def reset_next(self, n: list[int], reset: bool) -> tuple[list[int], int, int]:
+    def reset_next(self, n: List[int], reset: bool) -> Tuple[List[int], int, int]:
         curr = n.pop()
         if reset:
             return [self.mark.start], 1, 0
@@ -70,7 +71,7 @@ class Day(LinkMarkT, metaclass=Meta, cap=30):
         curr, carry = self.mark.next(curr, 1)
         if carry > 0:
             raise Indecisive
-        
+
         return [curr], 1, carry
 
 

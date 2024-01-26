@@ -5,7 +5,7 @@ from src.clock.clock import Clock as OClock
 
 
 class Clock(OClock):
-    def prev(self, now: TimeT, leap: int = 1) -> tuple[TimeT, int]:
+    def prev(self, now: TimeT, leap: int = 1):
         marks, reset, bo = self.reset_prev(now)
 
         leap_left = leap - reset
@@ -14,7 +14,7 @@ class Clock(OClock):
 
         return nums, borrow + bo
 
-    def next(self, now: TimeT, leap: int = 1) -> tuple[TimeT, int]:
+    def next(self, now: TimeT, leap: int = 1):
         marks, reset, bo = self.reset_next(now)
 
         leap_left = leap - reset

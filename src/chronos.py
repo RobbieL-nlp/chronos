@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Callable, Optional, Protocol
+from typing import Dict, List, Protocol, Tuple, Union
 
 from .calendar.calendar import CMode, Calendar
 from .clock.clock import Clock, TimeT
@@ -10,7 +10,7 @@ from .parser.specs.point import CronDecoder
 from .calendar.calendar import CMode
 from .exceptions import Inadequate, Indecisive
 
-_MODE_CALC_DEC: dict[CMode, CalcP] = {
+_MODE_CALC_DEC: Dict[CMode, CalcP] = {
     CMode.D: CalcDecD,
     CMode.W: CalcDecW,
     CMode.M: CalcDecM,
@@ -18,7 +18,7 @@ _MODE_CALC_DEC: dict[CMode, CalcP] = {
 }
 
 
-_MODE_DT_ENC: dict[CMode, DTE] = {
+_MODE_DT_ENC: Dict[CMode, DTE] = {
     CMode.D: DTEncD,
     CMode.W: DTEncW,
     CMode.M: DTEncM,
@@ -31,13 +31,13 @@ MIN_DT_UNIT = timedelta(seconds=1)
 class ChronosT(Protocol):
     mode: CMode
 
-    def prev(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
+    def prev(self, now: Union[datetime, None] = None, leap: int = 1) -> datetime:
         ...
 
-    def next(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
+    def next(self, now: Union[datetime, None] = None, leap: int = 1) -> datetime:
         ...
 
-    def contains(self, now: Optional[datetime] = None) -> bool:
+    def contains(self, now: Union[datetime, None] = None) -> bool:
         ...
 
     def __contains__(self, now: datetime) -> bool:
@@ -60,8 +60,8 @@ class _ChronosFromSpecs(ChronosT):
         return self._mode
 
     def _reset(
-        self, pts: tuple[int, ...], fn: str, tfn: str
-    ) -> tuple[list[int], TimeT, int]:
+        self, pts: Tuple[int, ...], fn: str, tfn: str
+    ) -> Tuple[List[int], TimeT, int]:
         cals = list(pts[-4::-1])
         clocks = pts[-3], pts[-2], pts[-1]
         try:
@@ -75,7 +75,7 @@ class _ChronosFromSpecs(ChronosT):
 
         return dts, (clock_pts[0], clock_pts[1], clock_pts[2]), ch
 
-    def prev(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
+    def prev(self, now: Union[datetime, None] = None, leap: int = 1) -> datetime:
         now = now or datetime.now()
         encs = self._dt_enc.encode(now)
         dts, clocks, ch = self._reset(encs, "reset_prev", "prev")
@@ -87,7 +87,7 @@ class _ChronosFromSpecs(ChronosT):
         dts = self._calendar.prev(dts, borrow)
         return self._calc_dec.decode(dts[::-1], clocks)
 
-    def next(self, now: Optional[datetime] = None, leap: int = 1) -> datetime:
+    def next(self, now: Union[datetime, None] = None, leap: int = 1) -> datetime:
         now = now or datetime.now()
         encs = self._dt_enc.encode(now)
         dts, clocks, ch = self._reset(encs, "reset_next", "next")
@@ -99,7 +99,7 @@ class _ChronosFromSpecs(ChronosT):
 
         return self._calc_dec.decode(dts[::-1], clocks)
 
-    def contains(self, now: Optional[datetime] = None) -> bool:
+    def contains(self, now: Union[datetime, None] = None) -> bool:
         now = now or datetime.now()
         encs = self._dt_enc.encode(now)
         return self._clock.contains(
@@ -161,11 +161,8 @@ class ChronoPeriod:
     def end(self) -> ChronosT:
         return self._end
 
-    def contains(self, now: Optional[datetime] = None) -> bool:
+    def contains(self, now: Union[datetime, None] = None) -> bool:
         now = now or datetime.now()
         return self.start.next(now) > self.end.next(now - MIN_DT_UNIT)
 
     __contains__ = contains
-
-
-
