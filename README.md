@@ -49,7 +49,7 @@ CMode.M / "m": Year Month "Day of Month" Hour Minute Second
 
 CMode.MW / "mw": Year Month "Week of Month" "Day of Week" Hour Minute Second
 
-Cmode.D / "-": Year "Day of Year" Hour Minute Second
+Cmode.D / "_": Year "Day of Year" Hour Minute Second
 
 Cmode.W / "w": Year "Week of Year" "Day of Week" Hour Minute Second
 
