@@ -9,7 +9,7 @@ setup(
     version="0.1.0",
     description="An innovated periodic cron time utility using similar but extended expression with cron, and optimized algorithm implementation for large number of steps search.",
     long_description=details,
-    long_description_type="text/markdown",
+    long_description_content_type="text/markdown",
     author="RobbieL-nlp",
     license_files="LICENSE",
     url="https://github.com/RobbieL-nlp/xchronos",
