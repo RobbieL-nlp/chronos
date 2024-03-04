@@ -108,7 +108,7 @@ class Chronos(_ChronosFromSpecs):
     __slots__ = "_cron"
 
     def __init__(self, cron: str, mode: CMode = CMode.M) -> None:
-        crons = cron.split(";")
+        crons = cron.replace("-", "~").replace("L", "-").split(";")
         self._cron = crons[0].strip()
 
         if len(crons) > 1:

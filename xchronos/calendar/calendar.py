@@ -8,7 +8,7 @@ from ..mark import SpecT
 class CMode(str, Enum):
     M = "m"
     MW = "mw"
-    D = "-"
+    D = "_"
     W = "w"
 
 
