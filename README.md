@@ -68,7 +68,7 @@ Cmode.W / "w": Year "Week of Year" "Day of Week" Hour Minute Second
 
 4. "," seperation a list enum of numbers;
 
-5. "; m|mw|-|w", choose one of the mode to represent, use ";" to seperate the mode string "m", "mw", "-", or "w" from the main pattern string;
+5. "; m|mw|\_|w", choose one of the mode to represent, use ";" to seperate the mode string "m", "mw", "_", or "w" from the main pattern string;
     - if you omit mode string here, you'll need to specify it in class loader later;
 ### Period Pattern
 
