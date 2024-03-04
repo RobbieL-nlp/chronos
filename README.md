@@ -36,7 +36,7 @@ In favor of extending time expression with extra time units, there are 4 calenda
 class CMode(str, Enum):
     M = "m" # month between year and day: month of year mode
     MW = "mw" # month and week between year and day: monthweek mode
-    D = "-" # nothing between year and day: day of year mode
+    D = "_" # nothing between year and day: day of year mode
     W = "w" # week between year and day: week of year mode
 
 ```
