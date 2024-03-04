@@ -1,8 +1,8 @@
 from datetime import datetime
 import unittest
-from src.calendar.calendar import CMode
+from xchronos.calendar.calendar import CMode
 
-from src.chronos import ChronoPeriod as OPeriod, Chronos
+from xchronos.chronos import ChronoPeriod as OPeriod, Chronos
 
 
 class ChronoPeriod(OPeriod):
@@ -22,7 +22,7 @@ class ChronoPeriod(OPeriod):
 class ChronosTest(unittest.TestCase):
     def setUp(self) -> None:
         self.c = Chronos("* * * * *", CMode.D)
-        self.c0 = Chronos("* * * * * ; -")
+        self.c0 = Chronos("* * * * * ; _")
         self.c1 = Chronos("* * * 1,3,5 * * ; m")
         self.cmw = Chronos("* 1,3,5 * 3 0 0 0; mw")
         self.cw = Chronos("* 1,3,5 3 0 0 0; w")
@@ -120,7 +120,7 @@ class ChronosTest(unittest.TestCase):
 class ChronoPeriodTest(unittest.TestCase):
     def setUp(self) -> None:
         self.c = ChronoPeriod("* * * * ..", CMode.D)
-        self.c0 = ChronoPeriod("* * * * .. ; -")
+        self.c0 = ChronoPeriod("* * * * .. ; _")
         self.c1 = ChronoPeriod("* * * 1,3,5 * .. ; m")
         self.cmw = ChronoPeriod("* 1,3,5 * 3..5 0 0 0; mw")
         self.cw = ChronoPeriod("* 1,3,5 3..5 0 0 0; w")

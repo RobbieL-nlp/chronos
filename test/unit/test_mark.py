@@ -1,7 +1,7 @@
 import random
 import unittest
 
-from src.mark import EnumM, Every, Seq, Solo, _fmt_mark_num
+from xchronos.mark import EnumM, Every, Seq, Solo, _fmt_mark_num
 
 _CAPS = [3, 4, 6, 11, 23, 27, 28, 29, 30, 51, 52, 59, 364, 365]
 

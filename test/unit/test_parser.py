@@ -1,13 +1,13 @@
 from datetime import datetime
 import unittest
-from src.calendar.calendar import CMode
-from src.exceptions import ModeMismatch, NoMatch
-from src.parser.calc import CalcDecM, CalcDecMW, CalcDecD, CalcDecW
+from xchronos.calendar.calendar import CMode
+from xchronos.exceptions import ModeMismatch, NoMatch
+from xchronos.parser.calc import CalcDecM, CalcDecMW, CalcDecD, CalcDecW
 
-from src.parser.datetime import DTEncM, DTEncMW, DTEncW, DTEncD
-from src.parser.specs.period import PeriodDecoder
-from src.parser.specs.point import CronDecoder
-from src.parser.specs.scope import (
+from xchronos.parser.datetime import DTEncM, DTEncMW, DTEncW, DTEncD
+from xchronos.parser.specs.period import PeriodDecoder
+from xchronos.parser.specs.point import CronDecoder
+from xchronos.parser.specs.scope import (
     ScopeType,
     SoloDecoder,
     EveryDecoder,

@@ -1,8 +1,8 @@
 import unittest
-from src.exceptions import Inadequate, Indecisive
-from src.calendar.calendar import CMode, Calendar
+from xchronos.exceptions import Inadequate, Indecisive
+from xchronos.calendar.calendar import CMode, Calendar
 
-from src.calendar.week import WOLYear
+from xchronos.calendar.week import WOLYear
 
 
 class WeekTest(unittest.TestCase):

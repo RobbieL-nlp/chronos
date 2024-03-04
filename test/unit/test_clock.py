@@ -1,7 +1,7 @@
 import unittest
-from src.clock.clock import TimeT
+from xchronos.clock.clock import TimeT
 
-from src.clock.clock import Clock as OClock
+from xchronos.clock.clock import Clock as OClock
 
 
 class Clock(OClock):
