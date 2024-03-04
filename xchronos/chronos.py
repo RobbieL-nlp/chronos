@@ -31,14 +31,11 @@ MIN_DT_UNIT = timedelta(seconds=1)
 class ChronosT(Protocol):
     mode: CMode
 
-    def prev(self, now: Union[datetime, None] = None, leap: int = 1) -> datetime:
-        ...
+    def prev(self, now: Union[datetime, None] = None, leap: int = 1) -> datetime: ...
 
-    def next(self, now: Union[datetime, None] = None, leap: int = 1) -> datetime:
-        ...
+    def next(self, now: Union[datetime, None] = None, leap: int = 1) -> datetime: ...
 
-    def contains(self, now: Union[datetime, None] = None) -> bool:
-        ...
+    def contains(self, now: Union[datetime, None] = None) -> bool: ...
 
     def __contains__(self, now: datetime) -> bool:
         return self.contains(now)
@@ -132,7 +129,7 @@ class ChronoPeriod:
     __slots__ = ("_start", "_end", "_mode", "_cron")
 
     def __init__(self, cron: str, mode: CMode = CMode.M) -> None:
-        crons = cron.split(";")
+        crons = cron.replace("-", "~").replace("L", "-").split(";")
         self._cron = crons[0].strip()
 
         if len(crons) > 1:
