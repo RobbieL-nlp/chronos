@@ -6,7 +6,7 @@ with open("README.md") as f:
 
 setup(
     name="xchronos",
-    version="0.1.0.post1",
+    version="0.1.1",
     description="An innovated periodic cron time utility using similar but extended expression with cron, and optimized algorithm implementation for large number of steps search.",
     long_description=details,
     long_description_content_type="text/markdown",
