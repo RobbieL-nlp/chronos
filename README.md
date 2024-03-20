@@ -48,10 +48,11 @@ from datetime import datetime
 
 cron = ChronoX("* * * 1,3,5 * * ; c")
 
-assert cron.prev(datetime(2003, 11, 10, 6, 0, 6)) == datetime(2003, 11, 10, 6, 0, 5)
-assert cron.prev(datetime(2003, 11, 10, 6, 0, 6), 1) == datetime(2003, 11, 10, 6, 0, 5)
-assert cron.prev(datetime(2003, 11, 10, 6, 0, 6), leap=1) == datetime(2003, 11, 10, 6, 0, 5)
-assert cron.prev(datetime(2003, 11, 10, 6, 0, 6), leap=10) == datetime(2003, 11, 9, 5, 59, 50)
+assert cron.prev(datetime(2003, 11, 10, 6, 0, 6)) == datetime(2003, 11, 10, 5, 59, 59)
+assert cron.prev(datetime(2003, 11, 10, 6, 0, 6), 1) == datetime(2003, 11, 10, 5, 59, 59)
+assert cron.prev(datetime(2003, 11, 10, 6, 0, 6), leap=1) == datetime(2003, 11, 10, 5, 59, 59)
+
+assert cron.prev(datetime(2003, 11, 10, 0, 0, 6), leap=10) == datetime(2003, 11, 9, 5, 59, 50)
 
 assert cron.next(datetime(2003, 11, 10, 5, 59, 59)) == datetime(2003, 11, 11, 1, 0, 0)
 
