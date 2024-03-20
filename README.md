@@ -23,7 +23,7 @@ This is a python implementation of **ChronoX**. It requires using **cronx**, a c
 ### Install
 
 ```bash
-pip install chronox
+pip install chronox-python
 ```
 > python >= 3.8
 
