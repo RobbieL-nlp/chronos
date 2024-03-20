@@ -1,92 +1,52 @@
-# xchronos
+# ChronoX
 
-An innovated periodic cron time utility using similar but extended expression with cron, and optimized algorithm implementation for large number of steps search (by calculation instead of looping and try); 
+> The project details and documentation can be found [here](https://chronox-doc.vercel.app/); It also provides a online API (coming soon) with rust implementation;  
 
-Supports search with both point of datetime and period of datetime extended expression, e.g. nth week of month in a year and nth week of year;
+**ChronoX** is a project to extend the functionalities of conventional [cron](https://en.wikipedia.org/wiki/Cron) utility; 
 
-Natively support and optimize for large number of steps use case, e.g. what whould next xth time point be; Implemention largely reduces the search time complexity by using calculation instead of looping and try each available time point;
+It provides more expressive power (day of year, month of week, span of time) by using expression (let's call it **cronx**) similar to the conventional one; 
 
-Support period of time search, e.g. if a time point is between time A and time B;
+Besides conventional next/prev 1 search, **ChronoX** provides convinient function to directly and efficiently compute the next/prev `n` occurence of desired pattern, 
+where `n` could be extremely large! Most conventional implementation requires looping which leads to a *O*(n) time complexity, whereas **ChronoX** utilizes optimized algorithm to reduce the time complexity down to somewhere between **constant** and **log** between **ChronoX** rust implementation and a popular rust crate;
 
+If you needs to express the following besides the conventional cron: 
+- day of year 
+- week of month
+- time span between start and end
 
-## Install
+or, you needs to compute time **`N`** leaps away,
 
-- python >= 3.8
+**ChronoX** would be your right choice!
+
+This is a python implementation of **ChronoX**. It requires using **cronx**, a cron like expression, see [cronx guide below](#cronx) or detail docs. 
+
+### Install
 
 ```bash
-pip install xchronos
+pip install chronox
+```
+> python >= 3.8
+
+### Usage
+
+This package provides two main classes: `ChronoX` for time point and `ChronoXSpan` for time span.
+
+The input and output should be encapsulated by `datetime` class from `datetime` module;
+
+```python
+from datetime import datetime
 ```
 
-## xcron expression
+#### Time Point
 
-### Difference
+`ChronoX` class provides 3 main functions: `prev` and `next` to calculate previous and next time point respectively and `contains` to check if the passed in datetime can be represented by the pattern.
 
-Different from traditional cron expression, it represent the datetime from year to seconds; it also have several addional time units you can use;  
+```python
 
-### Datetime Unit
+from chronox import ChronoX
+from datetime import datetime
 
-There are 5 conventional cron used time units: month, day of month, day of week, hour, minutes and additional 4 time units: year, week of year, week of month, seconds; These units should be ordered from year to second when use;
-
-### Calendar Mode  
-
-In favor of extending time expression with extra time units, there are 4 calendar modes as following enum or str representation:
-
-```py
-
-class CMode(str, Enum):
-    M = "m" # month between year and day: month of year mode
-    MW = "mw" # month and week between year and day: monthweek mode
-    D = "_" # nothing between year and day: day of year mode
-    W = "w" # week between year and day: week of year mode
-
-```
-
-### Outline
-
-putting these together, the cron string should have the following outline for different mode:
-
-CMode.M / "m": Year Month "Day of Month" Hour Minute Second 
-
-CMode.MW / "mw": Year Month "Week of Month" "Day of Week" Hour Minute Second
-
-Cmode.D / "_": Year "Day of Year" Hour Minute Second
-
-Cmode.W / "w": Year "Week of Year" "Day of Week" Hour Minute Second
-
-- Second at end is optional and default to 0
-
-### Pattern
-
-0. space indicate the seperation of units, it should only appear in between units; 
-
-1. use 1 base number for unit in calendar and 0 base for time, simply put L before number to represent the last xth number, e.g. L1 for last 1, L5 for last 5;   
-    - 0 indicate the first number always;
-
-2. "*" wildcard to indicate every number in the units;
-
-3. "-" connect two number to indicate a range, inclusive, if follow by "/number", it indicates every #number of number from start to end, notice that end may not appear in possible number set, the set follow the calculation of start + number*k;
-
-4. "," seperation a list enum of numbers;
-
-5. "; m|mw|\_|w", choose one of the mode to represent, use ";" to seperate the mode string "m", "mw", "_", or "w" from the main pattern string;
-    - if you omit mode string here, you'll need to specify it in class loader later;
-### Period Pattern
-
-5. "..", In favor of expression a period of time, introduce .. as a new pattern, .. is short for 0..-1, you can specify or omit number on either side.
-    - Only .. pattern or a single number can apear after it, and a single number X will be translated into X..X;
-    - When this apears, it means the current and following units of time are seen as one unit block, and it apears in every periodic pattern described as the units before it. e.g. "2019 1,3,5 * 8..16 0..59 0; m" meaning 8:00:00 to 16:59:00 in every day in every Jan, March, May in year 2019;
-
-6. Examples:
-    - "* 1,L1 8 *; -": every 0 second of every minutes of 8 o'clock in first and last day of every year;
-    - "2000 1 1 * */3 0 0; mw": every 3 hour of every day in Jan first month of 2000;  
-## Usage
-
-### Chronos for time point
-
-```py
-from chronos import Chronos
-
-cron = Chronos("* * * 1,3,5 * * ; m")
+cron = ChronoX("* * * 1,3,5 * * ; c")
 
 assert cron.prev(datetime(2003, 11, 10, 6, 0, 6)) == datetime(2003, 11, 10, 6, 0, 5)
 assert cron.prev(datetime(2003, 11, 10, 6, 0, 6), 1) == datetime(2003, 11, 10, 6, 0, 5)
@@ -98,28 +58,138 @@ assert cron.next(datetime(2003, 11, 10, 5, 59, 59)) == datetime(2003, 11, 11, 1,
 # If current datetime represented by the cron
 cron.contains(datetime.now())
 
+# is equivalent to
+
+datetime.now() in cron
+
 ```
 
+parameter for datetime is optional and default to datetime.now()
 
-### Chronos for time period
+#### Time Span
 
-```py
-from chronos import ChronoPeriod
+`ChronoXSpan` provides a main function `contains`. It also provide `start` and `end` properties which reference decoded ChronoX instance for start and end pattern, you can utilize these two properties for calculation releted start or end pattern seperately. 
 
-period = ChronoPeriod("* 1,3,5 * 3..5 0 0 0; mw")
+```python
+from chronox import ChronoXSpan
+from datetime import datetime
+
+period = ChronoXSpan("* 1,3,5 * 3..5 0 0 0; m")
 
 assert period.contains(datetime(2003, 5, 16, 0, 0, 0))
 
+# is equivalent to
+
+datetime(2003, 5, 16, 0, 0, 0).now() in cron
+
+# calculate next start time
+period.start.next()
+
+# calculate next end time
+period.end.next()
+
+
 ```
 
-* ChronoPeriod instance has start and end field, they are instances of Chronnos class; To calculate next start, simply access the field and call next method;
+# cronx
+
+This guide explains **cronx** expression by comparing it with conventional cron; 
+if you are unfamiliar with cron, please read about [cron](https://en.wikipedia.org/wiki/Cron) first, or go to [detail](https://chronox-doc.vercel.app/cronx/detail) explaination directly.
+
+### More Expressive
+
+Beyond all the time pattern a conventional cron support, **cronx** also support the following pattern:
+1. `day of year`
+2. `week of month`
+3. `span of time` from `start time pattern` to `end time pattern` 
+
+All week date definition follows ISO standard, see [details](https://en.wikipedia.org/wiki/ISO_week_date)
 
 
-## Definitions
+In order to support these extra time patterns, **cronx** introduces the following main differences from the conventional cron:
+1. explicit indicator calendar mode
+2. different order of unit expression
+3. new character set `..` for span of time
 
-Date definitions agree with ISO standard:
+Let's go through them one by one.
 
-week of year / Month: https://en.wikipedia.org/wiki/ISO_week_date
+### Calendar Mode and Indicator 
+
+>full # of units include three clock units: `hour`, `minute`, `second`
+
+| Token  | Description  | Calendar Combination              | full # of units |
+| -------| -----------  | --------------------              | --------------- |
+| `d`    | day of year  | `year`, `day of year`             | 5 |
+| `w`    | week of year | `year`, `week of year`, `day of week` | 6 |
+| `m`    | special month special month composed by week | `year`, `month`, `week of month`, `day of week` | 7 |
+| `c`    | common mode  | `year`, `month`, `day of month`   | 6 |
+
+All indicator tokens should be append to the end of expression string, and using `;` to seperate from main expression.
+
+
+### Order of Unit
+Generally, **cronx** takes a reverse order compared to cron, that is from bigger unit to smaller one
+
+| mode  | Order  |
+| -------| -----------  |
+| `d`    | `year` `day of year` `hour` `minute` `second` |
+| `w`    | `year` `week of year` `day of week` `hour` `minute` `second` |
+| `m`    | `year` `month` `week of month` `day of week` `hour` `minute` `second` |
+| `c`    | `year` `month` `day of month` `hour` `minute` `second`  |
+
+
+### Span of Time
+
+This is a new concept, it represents a span or a block of time from a start to an end expressed by **cronx**, start and end occur in pairs, and connected by new character set `..` in **cronx**. 
+
+| cronx | meaning |
+| ----- | ------- |
+| `* * * * 0..15; d` | every minute (of every hour in every day in every year), from 0 second to 15 second |
+| `* 10 1..5 8..10 .. 0; w` | from 8:00:00 in 10th Monday to 10:59:00 in 10th Friday in every year |
+| `* 10 1 5 8.. .. ..; m` | first Friday in every October, from 8:00:00 to 23:59:59 |
+| `* 10 * 8..10 .. ..; c` | every day in every October, from 8:00:00 to 10:59:59 |
+
+This pattern has several rules as following:
+1. At least one explicit `..` unit pattern should appear;
+2. Only `..` or single number unit pattern should appear after a `..`;
+3. If a single number pattern `s` occurs after `..`, it will be expanded to `s..s` automatically in this context;
+4. You can omit integer on each side of `..`, default are `0` and `L1`, respectively; i.e., `..` equals `0..L1` or `1..L1`;
+> L1 means the last one;  
+
+
+
+### Unit Range and L 
+
+L is a useful indicator to represent ordinal in reverse order. Since correct pattern range is essential for correct and fast computation, explicity is much desired; It is highly recommended to use L indicator when you need to represent numbers close to end of a unit range, especially for calendar units that the range could vary on different circumstances;
+
+### Pattern with - /
+
+When use `a-b/c`, you may encouter with a situation that `b` does not comply with the sequence which `a` and `c` define; in this context, the last number `a-b/c` represents is `max(a+c*i)` where i > 0 and i is integer; 
+
+i.e. 1-9/5 represents 1, 6
+
+### Length, Omission, and Default
+
+`Second` and `year` is not necessary, and to indicate `year`, `second` must be explicit first; 
+
+If `U` is the full number of units for each mode (see [table](#calendar-mode-and-indicator)), `U-1` means year is implicit, `U-2` means year and second are implicit.
+
+`year` is always default to `*`;
+
+`second` is default `0` in normal context, and `0..59` in span context;
+
+### Examples
+| expression | meaning |
+| ----- | ------- |
+| `* 1,L1 8 *; d` | every minute of 8 clock in first and last day of every year |
+| `2000 1 1 * */3 0 0; m`| every 3 hour of every day in first week of Jan. 2000|
+| `2000 L1 1,3,5 10 0 0; w` | every 10 O'Clock of Monday, Wednesday, Friday in last week of 2000 |
+| `10 10 * *; c` | every minute (0 sec) in Oct. 10th, every year |
+| `10 10 * * *; c` | every seconds in Oct. 10th, every year |
+| `* * * * 0..15; d` | every minute (of every hour in every day in every year), from 0 second to 15 second |
+
+
+
 
 
 

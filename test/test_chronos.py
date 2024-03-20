@@ -2,7 +2,7 @@ from datetime import datetime
 import unittest
 from xchronos.calendar.calendar import CMode
 
-from xchronos.chronos import ChronoPeriod as OPeriod, Chronos
+from xchronos.chronos import ChronoXSpan as OPeriod, ChronoX
 
 
 class ChronoPeriod(OPeriod):
@@ -21,11 +21,11 @@ class ChronoPeriod(OPeriod):
 
 class ChronosTest(unittest.TestCase):
     def setUp(self) -> None:
-        self.c = Chronos("* * * * *", CMode.D)
-        self.c0 = Chronos("* * * * * ; _")
-        self.c1 = Chronos("* * * 1,3,5 * * ; m")
-        self.cmw = Chronos("* 1,3,5 * 3 0 0 0; mw")
-        self.cw = Chronos("* 1,3,5 3 0 0 0; w")
+        self.c = ChronoX("* * * * *", CMode.D)
+        self.c0 = ChronoX("* * * * * ; d")
+        self.c1 = ChronoX("* * * 1,3,5 * * ; c")
+        self.cmw = ChronoX("* 1,3,5 * 3 0 0 0; m")
+        self.cw = ChronoX("* 1,3,5 3 0 0 0; w")
 
     def test_prev(self):
         self.assertEqual(
@@ -120,9 +120,9 @@ class ChronosTest(unittest.TestCase):
 class ChronoPeriodTest(unittest.TestCase):
     def setUp(self) -> None:
         self.c = ChronoPeriod("* * * * ..", CMode.D)
-        self.c0 = ChronoPeriod("* * * * .. ; _")
-        self.c1 = ChronoPeriod("* * * 1,3,5 * .. ; m")
-        self.cmw = ChronoPeriod("* 1,3,5 * 3..5 0 0 0; mw")
+        self.c0 = ChronoPeriod("* * * * .. ; d")
+        self.c1 = ChronoPeriod("* * * 1,3,5 * .. ; c")
+        self.cmw = ChronoPeriod("* 1,3,5 * 3..5 0 0 0; m")
         self.cw = ChronoPeriod("* 1,3,5 3..5 0 0 0; w")
 
     def test_start(self):

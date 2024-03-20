@@ -104,7 +104,7 @@ class _ChronosFromSpecs(ChronosT):
         ) and self._calendar.contains(list(encs[-4::-1]))
 
 
-class Chronos(_ChronosFromSpecs):
+class ChronoX(_ChronosFromSpecs):
     __slots__ = "_cron"
 
     def __init__(self, cron: str, mode: CMode = CMode.M) -> None:
@@ -125,7 +125,7 @@ class Chronos(_ChronosFromSpecs):
         return self._cron
 
 
-class ChronoPeriod:
+class ChronoXSpan:
     __slots__ = ("_start", "_end", "_mode", "_cron")
 
     def __init__(self, cron: str, mode: CMode = CMode.M) -> None:
