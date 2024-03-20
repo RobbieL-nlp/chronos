@@ -81,7 +81,7 @@ assert period.contains(datetime(2003, 5, 16, 0, 0, 0))
 
 # is equivalent to
 
-datetime(2003, 5, 16, 0, 0, 0).now() in cron
+datetime(2003, 5, 16, 0, 0, 0).now() in period
 
 # calculate next start time
 period.start.next()
