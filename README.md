@@ -1,24 +1,24 @@
 # ChronoX
 
-> The project details and documentation can be found [here](https://chronox-doc.vercel.app/); It also provides a online API (coming soon) with rust implementation;  
+> The project details and documentation can be found [here](https://chronox.tech/); It also provides a online API (coming soon) for demonstration with rust implementation;  
 
-**ChronoX** is a project to extend the functionalities of conventional [cron](https://en.wikipedia.org/wiki/Cron) utility; 
+**ChronoX** is a project to extend functionalities of the conventional [cron](https://en.wikipedia.org/wiki/Cron) utility; 
 
-It provides more expressive power (day of year, month of week, span of time) by using expression (let's call it **cronx**) similar to the conventional one; 
+It provides more expressive power (day of year, month of week, span of time) by using expressions (let's call it **cronx**) similar to the conventional one; 
 
-Besides conventional next/prev 1 search, **ChronoX** provides convinient function to directly and efficiently compute the next/prev `n` occurence of desired pattern, 
-where `n` could be extremely large! Most conventional implementation requires looping which leads to a *O*(n) time complexity, whereas **ChronoX** utilizes optimized algorithm to reduce the time complexity down to somewhere between **constant** and **log** between **ChronoX** rust implementation and a popular rust crate;
+Besides conventional next/prev 1 search, **ChronoX** provides convinient functions to directly and efficiently compute the next/prev `n` occurence of desired pattern, 
+where `n` could be extremely large! Most conventional implementations require loops which leads to a *O*(n) time complexity, whereas **ChronoX** utilizes a optimized algorithm to reduce the time complexity down to somewhere between **constant** and **log**, here's a casual [benchmark](./benchmark/compare) between **ChronoX** rust implementation and a popular rust crate implement the conventional cron;
 
-If you needs to express the following besides the conventional cron: 
+If you needs to express the following patterns: 
 - day of year 
 - week of month
 - time span between start and end
 
-or, you needs to compute time **`N`** leaps away,
+or, you need to compute time **`N`** leaps away,
 
 **ChronoX** would be your right choice!
 
-This is a python implementation of **ChronoX**. It requires using **cronx**, a cron like expression, see [cronx guide below](#cronx) or detail docs. 
+This is a python implementation of **ChronoX**. It requires using **cronx**, a cron like expression, see [cronx guide below](#cronx) or detail explaination in [docs](https://chronox.tech/). 
 
 ### Install
 
@@ -69,7 +69,7 @@ parameter for datetime is optional and default to datetime.now()
 
 #### Time Span
 
-`ChronoXSpan` provides a main function `contains`. It also provide `start` and `end` properties which reference decoded ChronoX instance for start and end pattern, you can utilize these two properties for calculation releted start or end pattern seperately. 
+`ChronoXSpan` provides a main function `contains`. It also provide `start` and `end` properties which reference decoded ChronoX instances for start and end pattern, you can utilize these two properties for calculation releted start or end pattern seperately. 
 
 ```python
 from chronox import ChronoXSpan
@@ -94,8 +94,8 @@ period.end.next()
 
 # cronx
 
-This guide explains **cronx** expression by comparing it with conventional cron; 
-if you are unfamiliar with cron, please read about [cron](https://en.wikipedia.org/wiki/Cron) first, or go to [detail](https://chronox-doc.vercel.app/cronx/detail) explaination directly.
+This guide explains **cronx** expression by comparing it with the conventional cron; 
+if you are unfamiliar with cron, please read about [cron](https://en.wikipedia.org/wiki/Cron) first, or go to cronx detail section in [doc](https://chronox.tech).
 
 ### More Expressive
 
@@ -108,24 +108,24 @@ All week date definition follows ISO standard, see [details](https://en.wikipedi
 
 
 In order to support these extra time patterns, **cronx** introduces the following main differences from the conventional cron:
-1. explicit indicator calendar mode
-2. different order of unit expression
+1. explicit indicator for calendar mode
+2. different order of unit
 3. new character set `..` for span of time
 
 Let's go through them one by one.
 
 ### Calendar Mode and Indicator 
 
->full # of units include three clock units: `hour`, `minute`, `second`
+>full # of units includes three clock units: `hour`, `minute`, `second`
 
 | Token  | Description  | Calendar Combination              | full # of units |
 | -------| -----------  | --------------------              | --------------- |
 | `d`    | day of year  | `year`, `day of year`             | 5 |
 | `w`    | week of year | `year`, `week of year`, `day of week` | 6 |
-| `m`    | special month special month composed by week | `year`, `month`, `week of month`, `day of week` | 7 |
+| `m`    | special month composed by week | `year`, `month`, `week of month`, `day of week` | 7 |
 | `c`    | common mode  | `year`, `month`, `day of month`   | 6 |
 
-All indicator tokens should be append to the end of expression string, and using `;` to seperate from main expression.
+All indicator tokens should be at the end of expression string, and using `;` to seperate from the main expression.
 
 
 ### Order of Unit
@@ -165,15 +165,15 @@ L is a useful indicator to represent ordinal in reverse order. Since correct pat
 
 ### Pattern with - /
 
-When use `a-b/c`, you may encouter with a situation that `b` does not comply with the sequence which `a` and `c` define; in this context, the last number `a-b/c` represents is `max(a+c*i)` where i > 0 and i is integer; 
+When use forms like `a-b/c`, you may encouter with a situation that `b` does not comply with the sequence which `a` and `c` define; in this context, the last number `a-b/c` represents is `max(a+c*i)` where i > 0 and i is integer; 
 
 i.e. 1-9/5 represents 1, 6
 
 ### Length, Omission, and Default
 
-`Second` and `year` is not necessary, and to indicate `year`, `second` must be explicit first; 
+`Second` and `year` is not required, and to indicate `year`, `second` must be explicit first; 
 
-If `U` is the full number of units for each mode (see [table](#calendar-mode-and-indicator)), `U-1` means year is implicit, `U-2` means year and second are implicit.
+If `U` is the full number of units for each mode (see [table](#calendar-mode-and-indicator)), `U - 1` means year is implicit, `U - 2` means year and second are implicit.
 
 `year` is always default to `*`;
 
