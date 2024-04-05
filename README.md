@@ -1,6 +1,6 @@
 # ChronoX
 
-> The project details and documentation can be found [here](https://chronox.tech/); It also provides a online API (coming soon) for demonstration with rust implementation;  
+> The project details and documentation can be found [here](https://chronox.tech/); It also provides a online API for demonstration with rust implementation;  
 
 **ChronoX** is a project to extend functionalities of the conventional [cron](https://en.wikipedia.org/wiki/Cron) utility; 
 
